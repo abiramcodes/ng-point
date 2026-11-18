@@ -1,0 +1,32 @@
+{
+  "name": "ng-point-mcp",
+  "version": "0.0.1",
+  "description": "Local MCP server for ng-point: exposes recent UI selection contexts (component, file:line, element HTML, directives, parent, instruction) to AI coding agents via MCP tools, and receives new contexts from the running dev app over a localhost-only HTTP endpoint.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/server.js",
+  "bin": {
+    "ng-point-mcp": "dist/server.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "^5.1.0",
+    "typescript": "~6.0.2",
+    "vitest": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

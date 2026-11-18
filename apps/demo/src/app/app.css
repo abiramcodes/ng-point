@@ -1,0 +1,77 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.skip-link {
+  position: absolute;
+  inset-block-start: -48px;
+  inset-inline-start: 8px;
+  z-index: 100;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: #1c1c24;
+  color: #ffffff;
+  transition: inset-block-start 120ms ease;
+}
+
+.skip-link:focus {
+  inset-block-start: 8px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+  border-block-end: 1px solid #e3e3ea;
+}
+
+.app-brand {
+  margin: 0;
+  font-weight: 700;
+}
+
+.app-nav {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app-nav a {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: #2b2b3a;
+  text-decoration: none;
+}
+
+.app-nav a:hover,
+.app-nav a:focus-visible,
+.app-nav a.active {
+  background: #eef1ff;
+  color: #2f5fd0;
+}
+
+.app-main {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 880px;
+  margin-inline: auto;
+  padding: 24px;
+}
+
+.app-footer {
+  padding: 12px 24px;
+  border-block-start: 1px solid #e3e3ea;
+  color: #66667a;
+  font-size: 13px;
+}
+
+.app-footer p {
+  margin: 0;
+}

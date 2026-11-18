@@ -1,0 +1,17 @@
+/* Development-only TypeScript configuration.
+ *
+ * Used exclusively by the "development" build configuration in angular.json.
+ * `enableTemplateSourceLocations` makes the Angular AOT compiler attach a
+ * `data-ng-source-location="<templatePath>@o:<offset>,l:<line>,c:<column>"`
+ * attribute to every element in dev builds, which ng-point uses for exact
+ * template file:line context.
+ *
+ * IMPORTANT: this emission is NOT stripped from production builds, so the
+ * option must never leak into the shared/production tsconfig.
+ */
+{
+  "extends": "./tsconfig.app.json",
+  "angularCompilerOptions": {
+    "enableTemplateSourceLocations": true
+  }
+}

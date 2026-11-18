@@ -2,9 +2,12 @@
 
 # Compiled output
 /dist
+/packages/*/dist
 /tmp
 /out-tsc
 /bazel-out
+/coverage
+/packages/*/coverage
 
 # Node
 /node_modules

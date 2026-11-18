@@ -1,0 +1,28 @@
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 360px;
+  margin-block-end: 16px;
+}
+
+form button {
+  margin-block-start: 10px;
+}
+
+.token-display {
+  padding: 8px;
+  border: 1px dashed #d0a020;
+  border-radius: 8px;
+  background: #fffaf0;
+  overflow-wrap: anywhere;
+}
+
+.token-display code {
+  font-size: 12px;
+}
+
+.hint {
+  color: #66667a;
+  font-size: 13px;
+}
