@@ -10,9 +10,7 @@
     "watch": "ng build demo --watch --configuration development",
     "test": "ng test demo",
     "test:lib": "ng test ng-point",
-    "test:mcp": "pnpm --filter ng-point-mcp run test",
-    "test:all": "ng test demo && ng test ng-point && pnpm --filter ng-point-mcp run test",
-    "mcp": "node packages/ng-point-mcp/dist/server.js",
+    "test:all": "ng test demo && ng test ng-point",
     "check:prod": "ng build demo --configuration production && node scripts/check-prod-clean.mjs"
   },
   "packageManager": "pnpm@12.14.0",

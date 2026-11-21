@@ -1,7 +1,7 @@
 import { ApplicationRef, EnvironmentInjector, Injector, createComponent } from '@angular/core';
 import type { ResolvedNgPointConfig } from '../config';
 import { getNg, isDisabledByUser } from '../dev-guard';
-import { checkHealth } from '../mcp-bridge';
+import { isNgPointIgnored } from '../ng-point-ignore.directive';
 import { getSharedQueue } from '../queue';
 import { resolveContext, type ResolveOptions } from '../resolve';
 import { emptyContext } from '../snippet';
@@ -46,11 +46,6 @@ export function initNgPoint(config: ResolvedNgPointConfig, injector: Injector): 
   appRef.attachView(ref.hostView);
   document.body.appendChild(ref.location.nativeElement);
 
-  // MCP status chip probe (fire-and-forget).
-  void checkHealth({ endpoint: config.mcpEndpoint, token: config.mcpToken }).then((up) => {
-    session.mcpStatus.set(up ? 'up' : 'down');
-  });
-
   const isPickClick = (e: MouseEvent): boolean =>
     config.activationModifier === 'alt'
       ? e.altKey && !e.shiftKey && !e.ctrlKey && !e.metaKey
@@ -79,15 +74,32 @@ export function initNgPoint(config: ResolvedNgPointConfig, injector: Injector): 
       // micro-frontend wrappers, where `e.target` is only the host element.
       const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
       const raw = path.length > 0 ? path[0] : e.target;
-      const target = raw instanceof Element ? raw : null;
+      let target = raw instanceof Element ? raw : null;
       if (!target) {
         return;
       }
       if (ref.location.nativeElement.contains(target)) {
-        return; // never pick the panel itself
+        // Alt+Click landed on the panel itself: pick the element visually
+        // beneath it, so an open panel never blocks the area it covers.
+        const beneath =
+          typeof document.elementsFromPoint === 'function'
+            ? document.elementsFromPoint(e.clientX, e.clientY)
+            : [];
+        target =
+          beneath.find(
+            (el) => el instanceof Element && !ref.location.nativeElement.contains(el),
+          ) ?? null;
+        if (!target) {
+          return;
+        }
+      }
+      if (isNgPointIgnored(target)) {
+        session.notifySuppressed('ngPointIgnore: that element opts out of picking.');
+        return; // opted out via ngPointIgnore: leave the click completely untouched
       }
       const ng = getNg();
       if (!ng) {
+        session.notifySuppressed('window.ng is unavailable — is this a dev build?');
         return; // devtools surface missing — do nothing, keep app behavior
       }
       e.preventDefault();

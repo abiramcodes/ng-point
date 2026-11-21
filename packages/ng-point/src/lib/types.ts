@@ -25,7 +25,7 @@ export interface NgPointContext {
   redacted: boolean;
 }
 
-/** One entry of the recent-selections queue (also the wire format for the MCP mirror). */
+/** One entry of the recent-selections queue. */
 export interface NgPointQueueEntry {
   id: string;
   /** ISO 8601 timestamp. */

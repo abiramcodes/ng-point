@@ -15,10 +15,6 @@ export interface NgPointConfig {
   maxSelections?: number;
   /** Max entries kept in the recent queue (memory + sessionStorage). Default 6. */
   maxQueueEntries?: number;
-  /** ng-point-mcp ingest endpoint. Default `http://127.0.0.1:7317`. */
-  mcpEndpoint?: string;
-  /** Bearer token used when the MCP server runs with `--token`. */
-  mcpToken?: string;
   /** CSS selectors for elements that must always be treated as sensitive. */
   sensitiveSelectors?: string[];
   /** Extra secret-shape patterns redacted from element snippets and text. */
@@ -39,8 +35,6 @@ export interface ResolvedNgPointConfig {
   activationModifier: 'alt' | 'ctrl-shift';
   maxSelections: number;
   maxQueueEntries: number;
-  mcpEndpoint: string;
-  mcpToken?: string;
   sensitiveSelectors?: string[];
   extraRedactionPatterns?: RegExp[];
   includeTemplateLine: boolean;
@@ -52,7 +46,6 @@ export function resolveNgPointConfig(config: NgPointConfig = {}): ResolvedNgPoin
     activationModifier: 'alt',
     maxSelections: 5,
     maxQueueEntries: 6,
-    mcpEndpoint: 'http://127.0.0.1:7317',
     includeTemplateLine: true,
     ...config,
   };

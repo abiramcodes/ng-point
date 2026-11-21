@@ -28,8 +28,9 @@ export function isDisabledByUser(): boolean {
 /**
  * The Angular devtools API, or null.
  * Angular publishes `window.ng` during bootstrap — it may NOT exist yet when
- * Angular's `ENVIRONMENT_INITIALIZER`s run, so always call this lazily
- * (at click time), never during provider initialization.
+ * Angular's environment initializers (provideEnvironmentInitializer) run, so
+ * always call this lazily (at click time), never during provider
+ * initialization.
  */
 export function getNg(): NgDevToolsApi | null {
   return (globalThis as { ng?: NgDevToolsApi }).ng ?? null;

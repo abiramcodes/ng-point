@@ -1,6 +1,6 @@
 # ng-point-mcp
 
-Local MCP server for [ng-point](https://github.com/ng-point/ng-point) — exposes the recent UI selection contexts captured in your running Angular dev app to AI coding agents.
+Local MCP server for [ng-point](https://github.com/abiramcodes/ng-point) — exposes the recent UI selection contexts captured in your running Angular dev app to AI coding agents.
 
 One process, two roles:
 

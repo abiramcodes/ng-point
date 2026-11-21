@@ -14,9 +14,11 @@ function capFifo(entries: NgPointQueueEntry[], max: number): NgPointQueueEntry[]
  * Cleared only by explicit user action — never automatically.
  */
 export class NgPointQueue {
+  private readonly max: number;
   readonly entries = signal<NgPointQueueEntry[]>([]);
 
-  constructor(private readonly max = 6) {
+  constructor(max = 6) {
+    this.max = max;
     this.hydrate();
   }
 

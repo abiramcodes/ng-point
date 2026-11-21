@@ -1,12 +1,12 @@
 # ng-point
 
-Dev-mode-only Angular package. **Alt+Click** any element in your running dev app → a small overlay shows the component name, `file:line`, template, cleaned HTML, directives and parent component → type an optional instruction → **Enter** copies a compact, LLM-friendly context block to the clipboard and adds it to a recent-selections queue (mirrored to the optional `ng-point-mcp` server for AI coding agents).
+Dev-mode-only Angular package. **Alt+Click** any element in your running dev app → a small overlay shows the component name, `file:line`, template, cleaned HTML, directives and parent component → type an optional instruction → **Enter** copies a compact, LLM-friendly context block to the clipboard and adds it to a recent-selections queue.
 
-- **Clipboard is the zero-friction primary path.** MCP is pull-based only — agents fetch the queue; nothing is ever pushed into an agent session.
+- **Clipboard is the zero-friction path** — nothing is ever pushed into an agent session; you paste.
 - **Does nothing in production builds.**
 - **No custom build plugin, no UI framework** — source locations come from the Angular AOT compiler's own dev-mode metadata; the overlay is a native `<dialog>` with a few KB of self-contained CSS.
 
-Works with Angular **v22+**.
+Works with Angular **21 and 22** (`@angular/core`/`@angular/common` `^21.0.0 || ^22.0.0`). The only version-dependent feature is the optional `Template:` line, which needs an app compiler of **22.1.4+** (see the setup variations below); everything else behaves identically on 21 and 22, zone-based or zoneless — ng-point uses no zone APIs and inherits your app's change-detection mode.
 
 ## Install
 
@@ -27,9 +27,11 @@ export const appConfig: ApplicationConfig = {
 
 That's it. In `ng serve` (development), Alt+Click any element. In production builds the provider's initializer returns immediately — no listeners, no overlay, nothing.
 
-### Optional: exact template `file:line` (`Template:` line)
+### Optional: exact template `file:line` (`Template:` line) — Angular 22.1.4+ only
 
-Angular can stamp every element with its template source location. Create a **dev-only** tsconfig:
+The compiler option behind this (`enableTemplateSourceLocations`) exists only in Angular **22.1.4 and later**. On Angular 21.x (and 22.0–22.1.3) skip this section entirely: ng-point works the same, context blocks simply omit the `Template:` line. Adding the option on older compilers is harmless — it is silently ignored and no attributes are stamped (verified on 20/21 toolchains).
+
+On 22.1.4+, Angular can stamp every element with its template source location. Create a **dev-only** tsconfig:
 
 ```jsonc
 // tsconfig.app.dev.json — extends your app tsconfig
@@ -66,6 +68,17 @@ bootstrapApplication(App, {
 });
 ```
 
+## Setup variations by Angular version
+
+Install and `provideNgPoint()` are identical on every supported version. The only differences:
+
+| | Angular 21.x | Angular 22.0–22.1.3 | Angular 22.1.4+ |
+| --- | --- | --- | --- |
+| `Component:` / `File:` lines (compiler `debugInfo`) | ✔ | ✔ | ✔ |
+| `Template:` line | — (line omitted) | — (line omitted) | ✔ with the dev-only tsconfig above |
+| `enableTemplateSourceLocations` in tsconfig | Silently ignored — safe to leave in | Silently ignored — safe to leave in | Required for `Template:` |
+| Change detection | Zone or zoneless — inherited from your app | Same | Same |
+
 ## Usage
 
 | Action | Effect |
@@ -75,12 +88,14 @@ bootstrapApplication(App, {
 | `Alt+↑` / `Alt+↓` | Re-target the active selection to the parent / first-child element |
 | Click a card | Make it the active selection (arrows / re-pick act on it) |
 | Card `✕` | Remove that selection |
-| `Enter` | Copy **all** blocks (joined by `---`), queue each as its own entry, mirror to the MCP server, close |
+| `Enter` | Copy **all** blocks (joined by `---`), queue each as its own entry, close |
 | `Ctrl+Enter` or per-card `copy` | Copy one block without queueing |
 | `Shift+Enter` | Newline in the instruction (collapsed in the output) |
 | `Escape` | Close without queueing |
 
-The block preview in the panel is **editable** — what's in the textarea is exactly what gets copied, queued and mirrored. On Enter the final text is re-scanned for secret shapes and a warn-only `possible secret` badge appears if one is detected.
+The block preview in the panel is **editable** — what's in the textarea is exactly what gets copied and queued. On Enter the final text is re-scanned for secret shapes and a warn-only `possible secret` badge appears if one is detected.
+
+The panel itself is **draggable by its header** and clamped so it always stays fully on screen (its cards and queue scroll inside). Multiple selections spread **horizontally**: the panel widens by a card slot per pick up to the screen edge, and the cards row scrolls sideways when the space runs out. `Enter` commits from anywhere on the panel — instruction or not — and the Recent queue has its own `copy all` that puts every queued entry on the clipboard at once. Alt+Clicks that land **on the panel itself** pick the element visually beneath it, and a suppressed pick (an `ngPointIgnore` subtree) explains itself in the status line instead of silently doing nothing.
 
 ## Clipboard format
 
@@ -116,8 +131,6 @@ provideNgPoint({
   activationModifier: 'alt',          // or 'ctrl-shift' (picks with Ctrl+Shift+Click)
   maxSelections: 5,                    // contexts per session
   maxQueueEntries: 6,                  // recent queue cap (memory + sessionStorage)
-  mcpEndpoint: 'http://127.0.0.1:7317',
-  mcpToken: 'optional-bearer-token',
   sensitiveSelectors: ['input[autocomplete="cc-number"]'],
   extraRedactionPatterns: [/TICKET-\d+/],
   includeTemplateLine: true,
@@ -129,9 +142,23 @@ provideNgPoint({
 
 Kill-switch: set `localStorage.ngPointDisabled = '1'` at runtime to disable picking without a rebuild.
 
+## Opting out (per element)
+
+Mark any element — and its whole subtree — as off-limits to ng-point picks:
+
+```html
+<div ngPointIgnore>Alt+Click inside me does nothing.</div>
+<section [ngPointIgnore]="isThirdPartyPanel">Conditional opt-out.</section>
+```
+
+Clicks inside an ignored subtree are left completely untouched: no capture, no overlay, no
+`preventDefault()` — the app's own click behavior runs as if ng-point were not installed.
+`Alt+↑`/`Alt+↓` retargeting skips ignored zones, and `[ngPointIgnore]="false"` re-enables
+picking. A plain `ng-point-ignore` attribute (without importing the directive) is honored too.
+
 ## Security & redaction (dev mode is not a reason to leak secrets)
 
-Redaction happens **at capture time** — the clipboard, queue, `sessionStorage` and MCP mirror only ever hold already-redacted text:
+Redaction happens **at capture time** — the clipboard, queue and `sessionStorage` only ever hold already-redacted text:
 
 - `input.value` is **never read**; the snippet is built from an attribute **allowlist** (plus `aria-*`/`data-*`).
 - Angular noise and leak vectors are always stripped: `ng-reflect-*` (Angular can render bound values — including typed passwords — into dev-mode DOM), `_ngcontent-*`, `_nghost-*`, `ng-star-inserted`.
@@ -143,14 +170,14 @@ Redaction happens **at capture time** — the clipboard, queue, `sessionStorage`
 
 ## What ng-point does *not* do
 
-- It never pushes anything into an open agent session — MCP is pull-based.
+- It never pushes anything into an open agent session — you paste, the agent reads.
 - It never modifies app behavior outside the click/overlay flow (capture-phase listener only acts when the modifier is held; `preventDefault`/`stopPropagation` are called only for ng-point's own clicks).
 - It does not survive HMR state loss incorrectly: the queue rehydrates from a `globalThis` cache + `sessionStorage`.
 - Known limits: Shadow DOM encapsulation, elements inside `<iframe>`s, and SVG internals are best-effort; components from npm libraries report `(source location unavailable)`.
 
 ## Module federation
 
-Works when `@angular/core` is a shared singleton (required by every standard Angular MF setup) — picks in remote-rendered DOM resolve via the same `window.ng` surface Angular DevTools uses. See the root [`README.md`](https://github.com/ng-point/ng-point#module-federation-shell--runtime-loaded-remotes) for the full analysis: what works, what degrades gracefully (version-skewed non-singleton remotes), and per-remote caveats (build-root-relative `file:line`, per-remote dev tsconfig for template locations, sharing `ng-point` itself as a singleton).
+Works when `@angular/core` is a shared singleton (required by every standard Angular MF setup) — picks in remote-rendered DOM resolve via the same `window.ng` surface Angular DevTools uses. See the root [`README.md`](https://github.com/abiramcodes/ng-point#module-federation-shell--runtime-loaded-remotes) for the full analysis: what works, what degrades gracefully (version-skewed non-singleton remotes), and per-remote caveats (build-root-relative `file:line`, per-remote dev tsconfig for template locations, sharing `ng-point` itself as a singleton).
 
 ## How source locations work (no build plugin)
 
@@ -164,3 +191,9 @@ Works when `@angular/core` is a shared singleton (required by every standard Ang
 pnpm build:lib     # APF output → dist/ng-point
 pnpm test:lib      # single-run vitest with coverage
 ```
+
+The workspace develops on Angular 22; Angular 21 support is verified by the `angular21` CI job (`.github/workflows/ci.yml`), which swaps the workspace to the Angular 21 toolchain via `scripts/ci-angular21.mjs` and runs the full build/test suite. Release builds of the package should be produced with the Angular 21 toolchain (the oldest supported major), so the published APF output is consumable by both 21 and 22 apps.
+
+## License
+
+MIT — see the root [`LICENSE`](https://github.com/abiramcodes/ng-point/blob/main/LICENSE).

@@ -1,9 +1,9 @@
 import {
-  ENVIRONMENT_INITIALIZER,
   EnvironmentProviders,
   Injector,
   inject,
   makeEnvironmentProviders,
+  provideEnvironmentInitializer,
 } from '@angular/core';
 import { NG_POINT_CONFIG, resolveNgPointConfig, type NgPointConfig, type ResolvedNgPointConfig } from './config';
 
@@ -31,21 +31,15 @@ export function provideNgPoint(config: NgPointConfig = {}): EnvironmentProviders
   const resolved: ResolvedNgPointConfig = resolveNgPointConfig(config);
   return makeEnvironmentProviders([
     { provide: NG_POINT_CONFIG, useValue: resolved },
-    {
-      provide: ENVIRONMENT_INITIALIZER,
-      multi: true,
-      useFactory: () => {
-        const injector = inject(Injector);
-        return () => {
-          // Layer 1: no-op outside dev builds (constant-folded in production).
-          // The overlay (95% of the code) stays behind the dynamic import so
-          // production never loads it.
-          if (typeof ngDevMode === 'undefined' || !ngDevMode) {
-            return;
-          }
-          void import('./overlay/init').then((m) => m.initNgPoint(resolved, injector));
-        };
-      },
-    },
+    provideEnvironmentInitializer(() => {
+      const injector = inject(Injector);
+      // Layer 1: no-op outside dev builds (constant-folded in production).
+      // The overlay (95% of the code) stays behind the dynamic import so
+      // production never loads it.
+      if (typeof ngDevMode === 'undefined' || !ngDevMode) {
+        return;
+      }
+      void import('./overlay/init').then((m) => m.initNgPoint(resolved, injector));
+    }),
   ]);
 }

@@ -3,6 +3,14 @@
   "version": "0.0.1",
   "description": "Local MCP server for ng-point: exposes recent UI selection contexts (component, file:line, element HTML, directives, parent, instruction) to AI coding agents via MCP tools, and receives new contexts from the running dev app over a localhost-only HTTP endpoint.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abiramcodes/ng-point.git"
+  },
+  "bugs": {
+    "url": "https://github.com/abiramcodes/ng-point/issues"
+  },
+  "homepage": "https://abiramcodes.github.io/ng-point/",
   "type": "module",
   "main": "dist/server.js",
   "bin": {

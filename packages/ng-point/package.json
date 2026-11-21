@@ -1,15 +1,13 @@
 {
   "name": "ng-point",
   "version": "0.0.1",
-  "description": "Dev-mode-only Angular package: Alt+Click any element to capture an LLM-ready context block (component, file:line, template, directives, parent) — clipboard-first, with an optional local MCP server mirror for AI coding agents.",
+  "description": "Dev-mode-only Angular package: Alt+Click any element to capture an LLM-ready context block (component, file:line, template, directives, parent) — copied to the clipboard and queued for AI coding agents.",
   "license": "MIT",
   "keywords": [
     "angular",
     "devtools",
     "llm",
     "ai",
-    "mcp",
-    "model-context-protocol",
     "ai-agents",
     "cursor",
     "claude-code",
@@ -17,11 +15,15 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ng-point/ng-point.git"
+    "url": "git+https://github.com/abiramcodes/ng-point.git"
   },
+  "bugs": {
+    "url": "https://github.com/abiramcodes/ng-point/issues"
+  },
+  "homepage": "https://abiramcodes.github.io/ng-point/",
   "peerDependencies": {
-    "@angular/common": "^22.0.0",
-    "@angular/core": "^22.0.0"
+    "@angular/common": "^21.0.0 || ^22.0.0",
+    "@angular/core": "^21.0.0 || ^22.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

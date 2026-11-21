@@ -1,0 +1,1336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ng-point: one Alt+Click, your agent is already on it</title>
+  <meta
+    name="description"
+    content="A dev-mode Angular provider that turns Alt+Click into LLM-ready context: component, file:line, template, and cleaned HTML, copied to your clipboard for AI coding agents. Angular 21–22."
+  />
+  <meta property="og:title" content="ng-point" />
+  <meta
+    property="og:description"
+    content="One Alt+Click and your agent is already on it. A dev-mode Angular provider for AI coding agents."
+  />
+  <meta property="og:type" content="website" />
+  <link rel="canonical" href="https://abiramcodes.github.io/ng-point/" />
+  <meta property="og:url" content="https://abiramcodes.github.io/ng-point/" />
+  <meta
+    property="og:image"
+    content="https://abiramcodes.github.io/ng-point/media/poster-fixed.png"
+  />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="color-scheme" content="light dark" />
+  <script>
+    // FOUC guard only (modern-web-guidance: dark-mode-toggle): applies a stored
+    // override before first paint. Everything else loads at the end of <body>.
+    try {
+      var s = localStorage.getItem('color-scheme');
+      if (s === 'light' || s === 'dark') {
+        document.querySelector('meta[name="color-scheme"]').content = s;
+      }
+    } catch (e) {}
+  </script>
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FAFAF8" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0E0E13" />
+  <link
+    rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%2317171F' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%23DD0031'/%3E%3C/svg%3E"
+  />
+  <link rel="apple-touch-icon" href="media/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"
+  />
+  <style>
+    /* ---- tokens: light/dark pairs, system-following with light-dark() on top ---- */
+    :root {
+      --paper-l: #fafaf8;
+      --paper-d: #0e0e13;
+      --paper-dim-l: #f2f2ec;
+      --paper-dim-d: #15151c;
+      --ink-l: #17171f;
+      --ink-d: #ededf2;
+      --ink-soft-l: #55555f;
+      --ink-soft-d: #9c9cab;
+      --line-l: #e6e6df;
+      --line-d: #26262f;
+      --line-strong-l: #b9b9b2;
+      --line-strong-d: #3a3a45;
+      --signal-l: #8a6400;
+      --signal-d: #ffc53d;
+      --signal-soft-l: rgba(230, 161, 0, 0.22);
+      --signal-soft-d: rgba(255, 197, 61, 0.18);
+
+      /* Widely-available fallback: follow the system preference. */
+      --paper: var(--paper-l);
+      --paper-dim: var(--paper-dim-l);
+      --ink: var(--ink-l);
+      --ink-soft: var(--ink-soft-l);
+      --line: var(--line-l);
+      --line-strong: var(--line-strong-l);
+      --signal: var(--signal-l);
+      --signal-soft: var(--signal-soft-l);
+      @media (prefers-color-scheme: dark) {
+        --paper: var(--paper-d);
+        --paper-dim: var(--paper-dim-d);
+        --ink: var(--ink-d);
+        --ink-soft: var(--ink-soft-d);
+        --line: var(--line-d);
+        --line-strong: var(--line-strong-d);
+        --signal: var(--signal-d);
+        --signal-soft: var(--signal-soft-d);
+      }
+      /* Where light-dark() exists, tokens follow the (possibly overridden) color-scheme. */
+      @supports (color: light-dark(white, black)) {
+        --paper: light-dark(var(--paper-l), var(--paper-d));
+        --paper-dim: light-dark(var(--paper-dim-l), var(--paper-dim-d));
+        --ink: light-dark(var(--ink-l), var(--ink-d));
+        --ink-soft: light-dark(var(--ink-soft-l), var(--ink-soft-d));
+        --line: light-dark(var(--line-l), var(--line-d));
+        --line-strong: light-dark(var(--line-strong-l), var(--line-strong-d));
+        --signal: light-dark(var(--signal-l), var(--signal-d));
+        --signal-soft: light-dark(var(--signal-soft-l), var(--signal-soft-d));
+      }
+
+      color-scheme: light dark;
+    }
+    /* The <meta> is the override state carrier: map it back onto the property. */
+    :root:has(> head > meta[name='color-scheme'][content='dark']) {
+      color-scheme: dark;
+    }
+    :root:has(> head > meta[name='color-scheme'][content='light']) {
+      color-scheme: light;
+    }
+
+    /* ---- base ---- */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 400 17px/1.6 var(--font-text, 'Schibsted Grotesk', 'Helvetica Neue', Arial, sans-serif);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    h1 {
+      line-height: 1.08;
+      letter-spacing: -0.015em;
+      margin: 0;
+      text-wrap: balance;
+      font-size: clamp(38px, 4.4vw, 52px);
+      font-weight: 700;
+    }
+    p {
+      margin: 0;
+    }
+    a {
+      color: var(--ink);
+      text-decoration-color: var(--signal);
+      text-underline-offset: 3px;
+      transition: color 0.15s;
+    }
+    a:hover {
+      color: var(--signal);
+    }
+    :focus-visible {
+      outline: 2px solid var(--signal);
+      outline-offset: 3px;
+    }
+    .skip {
+      position: absolute;
+      inset-block-start: -48px;
+      inset-inline-start: 8px;
+      z-index: 100;
+      padding: 8px 16px;
+      border-radius: 6px;
+      background: var(--ink);
+      color: var(--paper);
+      text-decoration: none;
+      transition: inset-block-start 0.15s;
+    }
+    .skip:focus {
+      inset-block-start: 8px;
+    }
+    .wrap {
+      max-inline-size: 1080px;
+      margin-inline: auto;
+      padding-inline: clamp(20px, 5vw, 48px);
+    }
+
+    /* ---- header ---- */
+    .top {
+      border-block-end: 1px solid var(--line);
+    }
+    .top .wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-block-size: 64px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 19px;
+      text-decoration: none;
+    }
+    .brand svg {
+      display: block;
+    }
+    .top nav {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      font-size: 15px;
+    }
+    .top nav a {
+      color: var(--ink-soft);
+      text-decoration: none;
+    }
+    .top nav a:hover {
+      color: var(--ink);
+      text-decoration: underline;
+    }
+    /* GitHub button: opens in a new tab, styled like the theme toggle. */
+    .gh-btn {
+      border: 1px solid var(--line-strong);
+      background: transparent;
+      color: var(--ink-soft);
+      font: 500 14px/1 'Schibsted Grotesk', Arial, sans-serif;
+      border-radius: 6px;
+      padding: 7px 14px;
+      text-decoration: none;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .gh-btn:hover {
+      color: var(--ink);
+      border-color: var(--ink-soft);
+      text-decoration: none;
+    }
+    /* Text-only theme toggle. The label shows the scheme clicking SWITCHES
+       TO (light page shows "Dark", dark page shows "Light") — no JS needed,
+       pure CSS driven by the color-scheme state carrier. */
+    .theme-toggle {
+      border: 1px solid var(--line-strong);
+      background: transparent;
+      color: var(--ink-soft);
+      font: 500 14px/1 'Schibsted Grotesk', Arial, sans-serif;
+      border-radius: 6px;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .theme-toggle:hover {
+      color: var(--ink);
+      border-color: var(--ink-soft);
+    }
+    /* Light pages (default and pinned light): clicking switches to dark. */
+    .theme-toggle .t-light {
+      display: none;
+    }
+    :root:has(> head > meta[name='color-scheme'][content='dark']) .theme-toggle .t-light {
+      display: inline;
+    }
+    :root:has(> head > meta[name='color-scheme'][content='dark']) .theme-toggle .t-dark {
+      display: none;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not(:has(> head > meta[name='color-scheme'][content='light'])) .theme-toggle .t-light {
+        display: inline;
+      }
+      :root:not(:has(> head > meta[name='color-scheme'][content='light'])) .theme-toggle .t-dark {
+        display: none;
+      }
+    }
+
+    /* ---- hero ---- */
+    .hero .wrap {
+      padding-block: clamp(48px, 7vh, 80px);
+    }
+    .hero-copy {
+      max-inline-size: 720px;
+    }
+    .pick-note {
+      margin-block-start: 16px;
+      color: var(--ink-soft);
+      font-size: 14.5px;
+    }
+    .hero .lede {
+      color: var(--ink-soft);
+      font-size: 18px;
+      margin-block: 18px 26px;
+      max-width: 56ch;
+    }
+
+    /* ---- install snippet + copy button (modern-web-guidance: copy-button) ---- */
+    .copyable {
+      position: relative;
+      max-inline-size: 360px;
+    }
+    .copyable pre {
+      margin: 0;
+      background: var(--paper-dim);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 13px 52px 13px 16px;
+      overflow-x: auto;
+    }
+    .copyable pre code {
+      font: 400 14px/1.5 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    }
+    .copy {
+      position: absolute;
+      inset-block-start: 7px;
+      inset-inline-end: 7px;
+    }
+    .copy-button {
+      display: grid;
+      place-items: center;
+      min-inline-size: 30px;
+      min-block-size: 30px;
+      padding: 4px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: var(--paper);
+      color: var(--ink-soft);
+      cursor: pointer;
+      opacity: 1;
+      transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .copy-button:hover {
+      color: var(--ink);
+      border-color: var(--ink-soft);
+    }
+    .copy-button svg {
+      display: block;
+    }
+    .copy-button .icon-check {
+      display: none;
+      color: var(--signal);
+    }
+    .copy-button[data-copied] .icon-copy {
+      display: none;
+    }
+    .copy-button[data-copied] .icon-check {
+      display: block;
+    }
+    .copy .tip {
+      position: absolute;
+      inset-block-start: -34px;
+      inset-inline-end: 0;
+      padding: 4px 9px;
+      border-radius: 6px;
+      background: var(--ink);
+      color: var(--paper);
+      font-size: 12.5px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .copy .tip:empty {
+      display: none;
+    }
+    .copy-button[data-copied] + .tip,
+    .copy-button[data-failed] + .tip {
+      opacity: 1;
+    }
+
+    /* ---- the scene: webpage pane -> agent chat, pasted then executed ----
+       Panes keep fixed schemes (a light app window, a dark agent prompt)
+       regardless of the page theme; only the page around them switches. */
+    .scene {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+      margin-block-start: 44px;
+      --flow-h: 48px;
+      --amber: #e6a100;
+      --amber-ring: #a87500;
+      --amber-soft: rgba(230, 161, 0, 0.22);
+      --dark: #17171f;
+    }
+    .pane {
+      border-radius: 12px;
+      margin: 0;
+      overflow: hidden;
+      box-shadow: 0 28px 56px -34px rgba(23, 23, 31, 0.55);
+    }
+    .pane-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 12px;
+      border-block-end: 1px solid;
+    }
+    .pane-bar i {
+      inline-size: 8px;
+      block-size: 8px;
+      border-radius: 50%;
+      flex: none;
+    }
+    .pane-page {
+      flex: 1.08;
+      background: #fff;
+      border: 1px solid #e6e6df;
+    }
+    .pane-page .pane-bar {
+      border-color: #e6e6df;
+      color: #55555f;
+    }
+    .pane-page .pane-bar i {
+      background: #e6e6df;
+    }
+    .pane-url {
+      margin-inline: auto;
+      padding: 2px 12px;
+      border-radius: 20px;
+      background: #f2f2ec;
+      font: 400 10.5px/1.6 'JetBrains Mono', monospace;
+    }
+    .pane-body {
+      position: relative;
+      padding: 14px;
+      /* Tall enough that the floating block-card clears the app card. */
+      min-block-size: 240px;
+    }
+    .app-card {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      padding: 12px;
+      border: 1px solid #ecece6;
+      border-radius: 9px;
+      background: #fafaf8;
+      max-inline-size: 62%;
+    }
+    .app-title {
+      font: 700 12px/1.3 'Schibsted Grotesk', sans-serif;
+      color: #17171f;
+    }
+    .app-line {
+      font: 400 10.5px/1.5 'Schibsted Grotesk', sans-serif;
+      color: #55555f;
+    }
+    .pick-anchor {
+      position: relative;
+      display: inline-block;
+      align-self: start;
+      margin-block-start: 4px;
+    }
+    .pick-anchor::after {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border: 2px solid var(--amber-ring);
+      border-radius: 9px;
+      box-shadow: 0 0 0 5px var(--amber-soft);
+      pointer-events: none;
+    }
+    .mini-btn {
+      display: inline-block;
+      border: 1px solid #17171f;
+      border-radius: 7px;
+      padding: 7px 12px;
+      font: 500 11.5px 'Schibsted Grotesk', sans-serif;
+      background: #17171f;
+      color: #fafaf8;
+    }
+    .kbd-hint {
+      position: absolute;
+      inset-block-end: calc(100% + 26px);
+      inset-inline-start: 50%;
+      translate: -50%;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #17171f;
+      color: #fafaf8;
+      border-radius: 7px;
+      padding: 4px 9px;
+      font-size: 11px;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .kbd-hint kbd {
+      font: 600 10.5px 'JetBrains Mono', monospace;
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 4px;
+      padding: 1px 5px;
+    }
+    .block-card {
+      position: absolute;
+      inset-block-end: 16px;
+      inset-inline-end: 14px;
+      inline-size: min(268px, 62%);
+      background: #fff;
+      border: 1px solid #e6e6df;
+      border-radius: 9px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 14px 28px -16px rgba(23, 23, 31, 0.35);
+    }
+    .bc-line {
+      font: 400 9.5px/1.5 'JetBrains Mono', monospace;
+      color: #17171f;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bc-line b {
+      color: #55555f;
+      font-weight: 400;
+    }
+    /* The user's typed instruction: types in after the card pops. */
+    .bc-instr {
+      inline-size: 34ch;
+      text-overflow: clip;
+      color: #8a6400;
+      border-inline-end: 2px solid #a87500;
+      padding-inline-end: 2px;
+    }
+    /* the transfer strip: horizontal on desktop, vertical when stacked */
+    .flow {
+      position: relative;
+      inline-size: 60px;
+      flex: none;
+    }
+    .flow::before {
+      content: '';
+      position: absolute;
+      inset-block-start: 50%;
+      inset-inline: 1rem;
+      border-block-start: 2px dotted var(--amber-ring);
+      opacity: 0.6;
+    }
+    /* The chat composer frame: empty (placeholder + caret) until the paste lands. */
+    .paste-frame {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      border: 1px solid #2b2b36;
+      border-radius: 8px;
+      padding: 11px 12px;
+      min-block-size: 122px;
+    }
+    .placeholder {
+      position: absolute;
+      inset-block-start: 11px;
+      inset-inline-start: 26px;
+      color: #9c9cab;
+      font: 400 10px/1.5 'JetBrains Mono', monospace;
+      opacity: 0;
+      pointer-events: none;
+    }
+    /* the agent harness pane */
+    .pane-agent {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #14141b;
+      border: 1px solid #2b2b36;
+    }
+    .pane-agent .pane-bar {
+      border-color: #2b2b36;
+      color: #9c9cab;
+      font: 500 10.5px 'JetBrains Mono', monospace;
+    }
+    .pane-agent .pane-bar i {
+      background: #2b2b36;
+    }
+    .prompt {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      justify-content: center;
+      gap: 7px;
+      padding: 13px 14px 15px;
+      min-block-size: 96px;
+    }
+    .pl {
+      font: 400 10px/1.5 'JetBrains Mono', monospace;
+      color: #ededf2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pl .k {
+      color: #9c9cab;
+    }
+    .pl.instr {
+      color: var(--amber);
+    }
+    .status {
+      position: relative;
+      margin-block-start: 4px;
+      min-block-size: 15px;
+    }
+    .status > span {
+      position: absolute;
+      inset-inline-start: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font: 500 10px/1.4 'JetBrains Mono', monospace;
+    }
+    .status-fixing {
+      color: #9c9cab;
+      opacity: 0;
+    }
+    .status-done {
+      color: #3fbf7f;
+      opacity: 1;
+    }
+    .caret {
+      align-self: start;
+      inline-size: 7px;
+      block-size: 13px;
+      background: var(--amber);
+      border-radius: 1px;
+    }
+    .anim-toggle {
+      position: absolute;
+      inset-block-end: -38px;
+      inset-inline-end: 0;
+      border: 1px solid var(--line-strong);
+      background: var(--paper);
+      color: var(--ink-soft);
+      font: 500 13px/1 'Schibsted Grotesk', sans-serif;
+      border-radius: 6px;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .anim-toggle:hover {
+      color: var(--ink);
+      border-color: var(--ink-soft);
+    }
+
+    /* ---- footer ---- */
+    footer .wrap {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px 24px;
+      padding-block: 26px 34px;
+      color: var(--ink-soft);
+      font-size: 14.5px;
+    }
+
+    /* ---- details strip: the specifics a curious visitor looks for ---- */
+    .details {
+      border-block-start: 1px solid var(--line);
+    }
+    .details .wrap {
+      padding-block: 40px 44px;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 30px 40px;
+      margin: 0;
+    }
+    .detail-grid > div {
+      border-block-start: 1px solid var(--line);
+      padding-block-start: 14px;
+    }
+    .detail-grid dt {
+      font-size: 14.5px;
+      font-weight: 700;
+      margin-block-end: 6px;
+    }
+    .detail-grid dd {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 13.5px;
+      line-height: 1.55;
+    }
+    .detail-grid dd code {
+      font: 400 0.92em 'JetBrains Mono', monospace;
+    }
+
+    /* ---- the loop: 8s, plays continuously, pausable, opt-in only ----
+       Static defaults below are the FINAL tableau (reduced motion gets the whole story,
+       ending on the fixed state). */
+    @media (prefers-reduced-motion: no-preference) {
+      .kbd-hint {
+        animation: kbd-cycle 8s cubic-bezier(0.33, 1, 0.68, 1) infinite;
+      }
+      .pick-anchor::after {
+        animation: ring-cycle 8s cubic-bezier(0.33, 1, 0.68, 1) infinite;
+      }
+      .block-card {
+        animation: block-cycle 8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+      }
+      .placeholder {
+        animation: ph-cycle 8s ease infinite;
+      }
+      .paste-frame {
+        animation: paste-flash 8s linear infinite;
+      }
+      .pl1 {
+        animation: pl-cycle-1 8s cubic-bezier(0.33, 1, 0.68, 1) infinite;
+      }
+      .pl2 {
+        animation: pl-cycle-2 8s cubic-bezier(0.33, 1, 0.68, 1) infinite;
+      }
+      .pl3 {
+        animation: pl-cycle-3 8s cubic-bezier(0.33, 1, 0.68, 1) infinite;
+      }
+      .pl4 {
+        animation: pl-cycle-4 8s cubic-bezier(0.33, 1, 0.68, 1) infinite;
+      }
+      .bc-instr {
+        animation: bc-type 8s steps(34, end) infinite;
+      }
+      .status-fixing {
+        animation: status-f-cycle 8s cubic-bezier(0.33, 1, 0.68, 1) infinite;
+      }
+      .status-fixing .dots {
+        animation: dots-pulse 1.1s ease-in-out infinite;
+      }
+      .status-done {
+        animation: status-d-cycle 8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+      }
+      .caret {
+        animation: caret-blink 1.15s steps(1) infinite;
+      }
+      .scene[data-paused] .kbd-hint,
+      .scene[data-paused] .pick-anchor::after,
+      .scene[data-paused] .block-card,
+      .scene[data-paused] .placeholder,
+      .scene[data-paused] .paste-frame,
+      .scene[data-paused] .pl1,
+      .scene[data-paused] .pl2,
+      .scene[data-paused] .pl3,
+      .scene[data-paused] .pl4,
+      .scene[data-paused] .bc-instr,
+      .scene[data-paused] .status-fixing,
+      .scene[data-paused] .status-fixing .dots,
+      .scene[data-paused] .status-done,
+      .scene[data-paused] .caret {
+        animation-play-state: paused;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .anim-toggle {
+        display: none;
+      }
+    }
+
+    @keyframes kbd-cycle {
+      0%,
+      4% {
+        opacity: 0;
+      }
+      8% {
+        opacity: 1;
+      }
+      88% {
+        opacity: 1;
+      }
+      94% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes ring-cycle {
+      0%,
+      2% {
+        opacity: 0;
+        scale: 1.18;
+      }
+      8% {
+        opacity: 1;
+        scale: 1;
+      }
+      88% {
+        opacity: 1;
+        scale: 1;
+      }
+      94% {
+        opacity: 0;
+        scale: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes block-cycle {
+      0%,
+      8% {
+        opacity: 0;
+        translate: 0 8px;
+        scale: 0.96;
+      }
+      14% {
+        opacity: 1;
+        translate: 0 0;
+        scale: 1;
+      }
+      88% {
+        opacity: 1;
+        translate: 0 0;
+      }
+      94% {
+        opacity: 0;
+        translate: 0 6px;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes paste-flash {
+      0%,
+      30% {
+        border-color: #2b2b36;
+        background: transparent;
+      }
+      33% {
+        border-color: var(--amber);
+        background: rgba(230, 161, 0, 0.07);
+      }
+      40% {
+        border-color: #2b2b36;
+        background: transparent;
+      }
+      100% {
+        border-color: #2b2b36;
+        background: transparent;
+      }
+    }
+    @keyframes ph-cycle {
+      0%,
+      28% {
+        opacity: 1;
+      }
+      31% {
+        opacity: 0;
+      }
+      94% {
+        opacity: 0;
+      }
+      97%,
+      100% {
+        opacity: 1;
+      }
+    }
+    @keyframes pl-cycle-1 {
+      0%,
+      32% {
+        opacity: 0;
+        translate: 0 4px;
+      }
+      37% {
+        opacity: 1;
+        translate: 0 0;
+      }
+      88% {
+        opacity: 1;
+      }
+      94% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes pl-cycle-2 {
+      0%,
+      35% {
+        opacity: 0;
+        translate: 0 4px;
+      }
+      40% {
+        opacity: 1;
+        translate: 0 0;
+      }
+      88% {
+        opacity: 1;
+      }
+      94% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes pl-cycle-3 {
+      0%,
+      38% {
+        opacity: 0;
+        translate: 0 4px;
+      }
+      43% {
+        opacity: 1;
+        translate: 0 0;
+      }
+      88% {
+        opacity: 1;
+      }
+      94% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes pl-cycle-4 {
+      0%,
+      41% {
+        opacity: 0;
+        translate: 0 4px;
+      }
+      46% {
+        opacity: 1;
+        translate: 0 0;
+      }
+      88% {
+        opacity: 1;
+      }
+      94% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes bc-type {
+      0%,
+      16% {
+        inline-size: 0ch;
+      }
+      28% {
+        inline-size: 34ch;
+      }
+      88% {
+        inline-size: 34ch;
+      }
+      100% {
+        inline-size: 0ch;
+      }
+    }
+    @keyframes status-f-cycle {
+      0%,
+      58% {
+        opacity: 0;
+      }
+      62% {
+        opacity: 1;
+      }
+      71% {
+        opacity: 1;
+      }
+      74% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes status-d-cycle {
+      0%,
+      72% {
+        opacity: 0;
+        translate: 0 3px;
+      }
+      77% {
+        opacity: 1;
+        translate: 0 0;
+      }
+      88% {
+        opacity: 1;
+      }
+      94% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes dots-pulse {
+      0%,
+      100% {
+        opacity: 0.35;
+      }
+      50% {
+        opacity: 1;
+      }
+    }
+    @keyframes caret-blink {
+      0%,
+      46% {
+        opacity: 1;
+      }
+      50%,
+      96% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 1;
+      }
+    }
+
+    /* ---- responsive: stack the panes on narrow screens ---- */
+    @media (max-width: 720px) {
+      .scene {
+        flex-direction: column;
+      }
+      .detail-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+      }
+      .flow {
+        inline-size: auto;
+        block-size: var(--flow-h);
+      }
+      .flow::before {
+        inset-block-start: auto;
+        inset-inline: auto;
+        inset-block: 8px 14px;
+        inset-inline-start: 66%;
+        border-block-start: none;
+        border-inline-start: 2px dotted var(--amber-ring);
+      }
+      .app-card {
+        max-inline-size: 58%;
+      }
+      .app-line {
+        font-size: 9.5px;
+      }
+      .block-card {
+        inline-size: min(240px, 58%);
+      }
+      .bc-line {
+        font-size: 8.5px;
+      }
+      .pl {
+        font-size: 8.5px;
+      }
+      .status > span {
+        font-size: 8.5px;
+      }
+      .top .wrap {
+        min-block-size: 56px;
+      }
+    }
+    @media (forced-colors: active) {
+      .pane,
+      .block-card,
+      .copyable pre,
+      .app-card {
+        border: 1px solid CanvasText;
+      }
+      .pick-anchor::after {
+        outline: 2px solid Highlight;
+        outline-offset: -5px;
+      }
+    }
+  </style>
+</head>
+<body id="top">
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top">
+    <div class="wrap">
+      <a class="brand" href="#top" aria-label="ng-point home">
+        <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+          <circle cx="13" cy="13" r="8.5" fill="none" stroke="#17171F" stroke-width="2.5" />
+          <circle cx="13" cy="13" r="3.6" fill="#DD0031" />
+        </svg>
+        ng-point
+      </a>
+      <nav aria-label="Page">
+        <a
+          href="https://github.com/abiramcodes/ng-point#readme"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Documentation on GitHub (opens in a new tab)"
+          >Docs</a
+        >
+        <a
+          class="gh-btn"
+          href="https://github.com/abiramcodes/ng-point"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="ng-point on GitHub (opens in a new tab)"
+          >GitHub</a
+        >
+        <button type="button" class="theme-toggle" aria-label="Switch color scheme">
+          <span class="t-light">Light</span><span class="t-dark">Dark</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-h">
+      <div class="wrap">
+        <div class="hero-copy">
+          <h1 id="hero-h">One Alt+Click.<br />Your agent is already on it.</h1>
+          <p class="lede">
+            ng-point captures the element's component, file:line, and cleaned HTML, the exact
+            context your agent needs, at a fraction of the tokens of a pasted screenshot.
+          </p>
+          <div class="copyable">
+            <span class="copy">
+              <button
+                type="button"
+                class="copy-button"
+                command="--copy"
+                commandfor="install-code"
+                aria-label="Copy install command"
+              >
+                <svg class="icon-copy" width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+                  <rect x="5.5" y="5.5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  <path d="M10.5 3.5h-7a1 1 0 0 0-1 1v7" fill="none" stroke="currentColor" stroke-width="1.5" />
+                </svg>
+                <svg class="icon-check" width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+              <span class="tip" role="status"></span>
+            </span>
+            <pre tabindex="0"><code id="install-code">npm install -D ng-point</code></pre>
+          </div>
+          <p class="pick-note">
+            Up to 5 elements in one session, copied together with one Enter. Angular 21–22.
+          </p>
+        </div>
+
+        <div
+          class="scene"
+          role="img"
+          aria-label="ng-point copies an element's context from a running app into an AI agent's prompt: Alt+Click highlights the Approve selected button, a context block appears with a typed instruction, the block is pasted into the agent's waiting prompt, and the agent goes from Fixing to Fixed."
+        >
+          <figure class="pane pane-page" aria-hidden="true">
+            <div class="pane-bar">
+              <i></i><i></i><i></i>
+              <span class="pane-url">localhost:4200/orders</span>
+              <i></i>
+            </div>
+            <div class="pane-body">
+              <div class="app-card">
+                <strong class="app-title">Orders</strong>
+                <span class="app-line">ann@example.com</span>
+                <span class="pick-anchor">
+                  <span class="mini-btn">Approve selected</span>
+                  <span class="kbd-hint"><kbd>Alt</kbd>Click</span>
+                </span>
+              </div>
+              <div class="block-card">
+                <span class="bc-line"><b>Component:</b> SubmitButtonComponent</span>
+                <span class="bc-line"><b>File:</b> src/app/orders/submit-button.component.ts:19</span>
+                <span class="bc-line"><b>Element:</b> &lt;button&gt;Approve selected&lt;/button&gt;</span>
+                <span class="bc-line bc-instr"><b>Instruction:</b> disable while loading</span>
+              </div>
+            </div>
+          </figure>
+
+          <div class="flow" aria-hidden="true"></div>
+
+          <figure class="pane pane-agent" aria-hidden="true">
+            <div class="pane-bar">
+              <span>agent</span>
+              <i style="margin-inline-start: auto"></i><i></i><i></i>
+            </div>
+            <div class="prompt">
+              <div class="paste-frame">
+                <span class="placeholder" aria-hidden="true">Paste the context…</span>
+                <span class="caret"></span>
+                <span class="pl pl1"><span class="k">Component:</span> SubmitButtonComponent</span>
+                <span class="pl pl2"><span class="k">File:</span> src/app/orders/submit-button.component.ts:19</span>
+                <span class="pl pl3"><span class="k">Element:</span> &lt;button&gt;Approve selected&lt;/button&gt;</span>
+                <span class="pl pl4 instr">Instruction: disable while loading</span>
+              </div>
+              <div class="status" aria-hidden="true">
+                <span class="status-fixing">Fixing<span class="dots">…</span></span>
+                <span class="status-done">
+                  <svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="#3FBF7F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  Fixed
+                </span>
+              </div>
+            </div>
+          </figure>
+
+          <button type="button" class="anim-toggle">Pause</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section class="details" aria-label="Details">
+    <div class="wrap">
+      <dl class="detail-grid">
+        <div>
+          <dt>In every block</dt>
+          <dd>
+            Component, file:line, template, cleaned HTML, directives, parent, and your typed
+            instruction.
+          </dd>
+        </div>
+        <div>
+          <dt>Shortcuts</dt>
+          <dd>
+            Alt+Click picks, Alt+Shift+Click adds, Alt+↑/↓ retargets, Enter copies and queues,
+            Esc discards.
+          </dd>
+        </div>
+        <div>
+          <dt>Safe by default</dt>
+          <dd>
+            Dev builds only, secrets redacted at capture, and <code>ngPointIgnore</code> opts any
+            subtree out.
+          </dd>
+        </div>
+        <div>
+          <dt>Works with</dt>
+          <dd>
+            Angular 21–22 (the template line needs 22.1.4+), lazy routes, dialogs, and
+            module-federation remotes.
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <p>MIT licensed. Dev-mode only by design.</p>
+    </div>
+  </footer>
+
+  <script>
+    // ---- theme toggle (modern-web-guidance: dark-mode-toggle) ----
+    // Two-state control: the target is the opposite of the currently rendered
+    // scheme; when the target matches the system preference the stored value is
+    // removed (unpin) instead of being stored.
+    var schemeMeta = document.querySelector('meta[name="color-scheme"]');
+    var themeToggle = document.querySelector('.theme-toggle');
+
+    function renderedScheme() {
+      var stored = schemeMeta.content;
+      if (stored === 'light' || stored === 'dark') return stored;
+      return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    themeToggle.addEventListener('click', function () {
+      var target = renderedScheme() === 'dark' ? 'light' : 'dark';
+      var system = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      try {
+        if (target === system) localStorage.removeItem('color-scheme');
+        else localStorage.setItem('color-scheme', target);
+      } catch (e) {}
+      schemeMeta.content = target === system ? 'light dark' : target;
+    });
+
+    // Keep multiple tabs in sync.
+    window.addEventListener('storage', function (event) {
+      if (event.key !== 'color-scheme') return;
+      schemeMeta.content =
+        event.newValue === 'light' || event.newValue === 'dark' ? event.newValue : 'light dark';
+    });
+
+    // ---- animation pause (modern-web-guidance: motion, WCAG 2.2.2) ----
+    // The label changes between Pause and Play, so aria-pressed is deliberately
+    // not set.
+    var scene = document.querySelector('.scene');
+    var animToggle = document.querySelector('.anim-toggle');
+    animToggle.addEventListener('click', function () {
+      var paused = scene.toggleAttribute('data-paused');
+      animToggle.textContent = paused ? 'Play' : 'Pause';
+    });
+
+    // ---- copy button (modern-web-guidance: copy-button) ----
+    let lastMessage = '';
+
+    function legacyCopy(text) {
+      var field = Object.assign(document.createElement('textarea'), { value: text });
+      field.setAttribute('readonly', '');
+      field.style.cssText = 'position:fixed;inset-block-start:0;opacity:0';
+      document.body.append(field);
+      field.select();
+      try {
+        return document.execCommand('copy');
+      } finally {
+        field.remove();
+      }
+    }
+
+    async function copy(button, target) {
+      var text = target.matches('input, textarea') ? target.value : target.innerText.trim();
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        report(button, true);
+      } catch (err) {
+        try {
+          if (!legacyCopy(text)) throw err;
+          report(button, true);
+        } catch (err2) {
+          report(button, false);
+        }
+      }
+    }
+
+    var timers = new WeakMap();
+
+    function report(button, ok) {
+      var tip = button.nextElementSibling;
+      clearTimeout(timers.get(button));
+      button.removeAttribute('data-copied');
+      button.removeAttribute('data-failed');
+      var message = ok ? 'Copied' : 'Copy failed';
+      if (message === lastMessage) message += '\u00A0'; // VoiceOver skips identical repeats
+      lastMessage = message;
+      tip.textContent = '';
+      void button.offsetWidth; // restart the CSS animation
+      button.setAttribute(ok ? 'data-copied' : 'data-failed', '');
+      requestAnimationFrame(function () {
+        tip.textContent = message;
+      });
+      timers.set(
+        button,
+        setTimeout(function () {
+          button.removeAttribute('data-copied');
+          button.removeAttribute('data-failed');
+          tip.textContent = '';
+        }, 2000),
+      );
+    }
+
+    if ('CommandEvent' in window) {
+      // Command events do not bubble: capture phase on document.
+      document.addEventListener(
+        'command',
+        function (event) {
+          if (event.command === '--copy') copy(event.source, event.target);
+        },
+        true,
+      );
+    } else {
+      // Fallback for browsers without Invoker Commands. One path only, never both.
+      document.addEventListener('click', function (event) {
+        var button = event.target.closest('button[command="--copy"]');
+        if (!button) return;
+        var target = document.getElementById(button.getAttribute('commandfor'));
+        if (target) copy(button, target);
+      });
+    }
+  </script>
+</body>
+</html>

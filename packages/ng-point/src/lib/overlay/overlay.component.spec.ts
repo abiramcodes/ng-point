@@ -150,6 +150,79 @@ describe('NgPointOverlayComponent', () => {
     await vi.waitFor(() => expect(dialog.hasAttribute('open')).toBe(false));
   });
 
+  it('Enter anywhere on the panel (no instruction, nothing focused) still commits', async () => {
+    const el = await createFixture();
+    session.openWith(context('A'), document.createElement('button'), 1, 1);
+    await TestBed.flushEffects();
+
+    const dialog = el.querySelector('dialog.ng-point-panel')!;
+    dialog.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+    );
+
+    await vi.waitFor(() => expect(clipboardWriteText).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(session.open()).toBe(false));
+    expect(queue.entries().length).toBe(1);
+  });
+
+  it('the queue "copy all" copies every queued entry, not just the latest', async () => {
+    const el = await createFixture();
+    queue.addMany([
+      {
+        id: 'q1',
+        capturedAt: 't1',
+        component: 'First',
+        file: 'src/first.ts',
+        element: '<i>1</i>',
+        directives: [],
+        instruction: '',
+        block: 'Component: First',
+      },
+      {
+        id: 'q2',
+        capturedAt: 't2',
+        component: 'Second',
+        file: 'src/second.ts',
+        element: '<i>2</i>',
+        directives: [],
+        instruction: '',
+        block: 'Component: Second',
+      },
+    ]);
+    await TestBed.flushEffects();
+
+    const copyAll = el.querySelector<HTMLButtonElement>('.ng-point-copy-queue')!;
+    expect(copyAll).toBeTruthy();
+    copyAll.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    await vi.waitFor(() => expect(clipboardWriteText).toHaveBeenCalledTimes(1));
+    const copied = clipboardWriteText.mock.calls[0]![0] as string;
+    expect(copied).toContain('Component: First');
+    expect(copied).toContain('\n\n---\n\n');
+    expect(copied).toContain('Component: Second');
+  });
+
+  it('dragging the header moves the panel by the pointer delta', async () => {
+    const el = await createFixture();
+    session.openWith(context('A'), document.createElement('button'), 100, 100);
+    await TestBed.flushEffects();
+
+    const head = el.querySelector<HTMLElement>('.ng-point-head')!;
+    head.dispatchEvent(
+      new MouseEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 200,
+        clientY: 200,
+      }),
+    );
+    head.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 260, clientY: 240 }));
+    head.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientX: 260, clientY: 240 }));
+
+    expect(session.positionX()).toBe(160);
+    expect(session.positionY()).toBe(140);
+  });
+
   it('Ctrl+Enter copies a single block without queueing', async () => {
     const el = await createFixture();
     const button = document.createElement('button');
@@ -190,6 +263,37 @@ describe('NgPointOverlayComponent', () => {
     );
     expect(session.open()).toBe(true);
     expect(queue.entries().length).toBe(0);
+  });
+
+  it('suppression notices surface in the panel status region', async () => {
+    const el = await createFixture();
+    session.openWith(context('A'), document.createElement('button'), 1, 1);
+    await TestBed.flushEffects();
+
+    session.notifySuppressed('ngPointIgnore: that element opts out of picking.');
+    await TestBed.flushEffects();
+
+    expect(el.querySelector('.ng-point-status')!.textContent).toContain('ngPointIgnore');
+  });
+
+  it('the panel widens for additional cards and clamps to the viewport', async () => {
+    const el = await createFixture();
+    const button = document.createElement('button');
+    session.openWith(context('A'), button, 10, 10);
+    await TestBed.flushEffects();
+    const dialog = el.querySelector('dialog.ng-point-panel') as HTMLElement;
+    expect(dialog.style.width).toBe('440px');
+
+    session.addSelection(context('B'), button);
+    session.addSelection(context('C'), button);
+    await TestBed.flushEffects();
+    // 440 base + 2 card slots (260 + 8 gap) = 976, under the 1024-16 cap.
+    expect(dialog.style.width).toBe('976px');
+
+    session.addSelection(context('D'), button);
+    await TestBed.flushEffects();
+    // 1244 would exceed the viewport: clamped, and the cards row scrolls.
+    expect(dialog.style.width).toBe('1008px');
   });
 
   it('the remove button drops a card without closing the session', async () => {

@@ -58,6 +58,34 @@ describe('NgPointSession lifecycle', () => {
     expect(session.positionX()).toBe(100);
   });
 
+  it('a suppression notice clears on the next successful pick', () => {
+    const { session } = makeSession();
+    session.notifySuppressed('ngPointIgnore');
+    session.openWith(context('A'), document.createElement('button'), 1, 1);
+    expect(session.notice()).toBe('');
+  });
+
+  it('moveTo clamps the panel origin so the whole panel stays on screen', () => {
+    const { session } = makeSession();
+    session.moveTo(5000, 5000, 1280, 800, 400);
+    expect(session.positionX()).toBe(1280 - 440 - 8);
+    expect(session.positionY()).toBe(800 - 400 - 8);
+  });
+
+  it('moveTo keeps drag deltas inside the viewport bounds', () => {
+    const { session } = makeSession();
+    session.moveTo(160, 140, 1280, 800, 400);
+    expect(session.positionX()).toBe(160);
+    expect(session.positionY()).toBe(140);
+  });
+
+  it('moveTo lets the min bound win on viewports smaller than the panel', () => {
+    const { session } = makeSession();
+    session.moveTo(-500, -500, 300, 200, 400);
+    expect(session.positionX()).toBe(8);
+    expect(session.positionY()).toBe(8);
+  });
+
   it('adds independent contexts up to the cap (default 5), then refuses', () => {
     const { session } = makeSession();
     const el = document.createElement('button');
@@ -115,6 +143,33 @@ describe('NgPointSession lifecycle', () => {
     session.openWith(context('A'), button, 1, 1);
     session.retarget(session.cards()[0]!.id, 'down');
     expect(session.cards()[0]!.context.component?.name).toBe('A');
+  });
+
+  it('retargeting up skips ngPointIgnore zones', () => {
+    const { session } = makeSession();
+    const outer = document.createElement('section');
+    const zone = document.createElement('div');
+    zone.setAttribute('ng-point-ignore', '');
+    const button = document.createElement('button');
+    zone.append(button);
+    outer.append(zone);
+    session.openWith(context('FromButton'), button, 1, 1);
+
+    session.retarget(session.cards()[0]!.id, 'up');
+    expect(session.cards()[0]!.context.component?.name).toBe('Comp-section');
+  });
+
+  it('retargeting down skips ngPointIgnore zones', () => {
+    const { session } = makeSession();
+    const parent = document.createElement('div');
+    const zone = document.createElement('span');
+    zone.setAttribute('data-ng-point-ignore', '');
+    const ok = document.createElement('p');
+    parent.append(zone, ok);
+    session.openWith(context('FromDiv'), parent, 1, 1);
+
+    session.retarget(session.cards()[0]!.id, 'down');
+    expect(session.cards()[0]!.context.component?.name).toBe('Comp-p');
   });
 
   it('removeCard keeps the session open and activates the last remaining card', () => {

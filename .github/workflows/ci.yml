@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  angular22:
+    name: Build & test (Angular 22)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:lib
+      - run: pnpm test
+      - run: pnpm build:lib
+      - run: pnpm check:prod
+
+  angular21:
+    name: Build & test (Angular 21)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: node scripts/ci-angular21.mjs
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm test:lib
+      - run: pnpm test
+      - run: pnpm build:lib
+      - run: pnpm check:prod

@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import type { ResolvedNgPointConfig } from '../config';
 import { assembleBlocks, formatBlock } from '../format';
+import { firstUnignoredAncestor, firstUnignoredChild } from '../ng-point-ignore.directive';
 import { detectSecrets } from '../snippet';
 import type { NgPointContext, NgPointQueueEntry } from '../types';
 import type { NgPointQueue } from '../queue';
@@ -20,17 +21,23 @@ export type ElementResolver = (element: Element) => NgPointContext;
  */
 export class SelectionCard {
   readonly id: string;
+  readonly context: NgPointContext;
+  readonly element: Element;
+  private readonly format: (instruction: string) => string;
   readonly instruction = signal('');
   readonly blockText = signal('');
   /** True once the user edited the block manually (auto-regeneration stops). */
   readonly manualEdit = signal(false);
 
   constructor(
-    readonly context: NgPointContext,
-    readonly element: Element,
-    private readonly format: (instruction: string) => string,
+    context: NgPointContext,
+    element: Element,
+    format: (instruction: string) => string,
     options: { id?: string; instruction?: string } = {},
   ) {
+    this.context = context;
+    this.element = element;
+    this.format = format;
     this.id = options.id ?? newCardId();
     if (options.instruction) {
       this.instruction.set(options.instruction);
@@ -66,7 +73,8 @@ export class NgPointSession {
   readonly activeId = signal<string | null>(null);
   readonly positionX = signal(0);
   readonly positionY = signal(0);
-  readonly mcpStatus = signal<'checking' | 'up' | 'down'>('checking');
+  /** Transient explanation from the click listener when a pick is suppressed. */
+  readonly notice = signal('');
 
   constructor(
     private readonly config: ResolvedNgPointConfig,
@@ -75,6 +83,7 @@ export class NgPointSession {
   ) {}
 
   openWith(context: NgPointContext, element: Element, x: number, y: number): void {
+    this.notice.set('');
     this.positionX.set(x);
     this.positionY.set(y);
     const card = this.createCard(context, element);
@@ -83,11 +92,36 @@ export class NgPointSession {
     this.open.set(true);
   }
 
+  /**
+   * Drag target: sets the panel origin, clamped so the panel stays fully on
+   * screen. Its size is measured by the overlay (the height argument); the
+   * min bound wins on viewports smaller than the panel, and the panel's own
+   * max-height + internal scroll take over from there.
+   */
+  notifySuppressed(reason: string): void {
+    this.notice.set(reason);
+  }
+
+  moveTo(
+    x: number,
+    y: number,
+    viewportW: number,
+    viewportH: number,
+    panelHeight: number,
+    panelWidth = 440,
+  ): void {
+    const maxX = Math.max(8, viewportW - panelWidth - 8);
+    const maxY = Math.max(8, viewportH - panelHeight - 8);
+    this.positionX.set(Math.min(Math.max(x, 8), maxX));
+    this.positionY.set(Math.min(Math.max(y, 8), maxY));
+  }
+
   /** Adds another independent context. Returns false when the session cap is reached. */
   addSelection(context: NgPointContext, element: Element): boolean {
     if (this.cards().length >= this.config.maxSelections) {
       return false;
     }
+    this.notice.set('');
     const card = this.createCard(context, element);
     this.cards.set([...this.cards(), card]);
     this.activeId.set(card.id);
@@ -103,6 +137,7 @@ export class NgPointSession {
       return;
     }
     const old = cards[index];
+    this.notice.set('');
     const replacement = this.createCard(context, element, {
       id: old.id,
       instruction: old.instruction(),
@@ -120,8 +155,11 @@ export class NgPointSession {
       return;
     }
     const card = cards[index];
+    // Retargeting skips ngPointIgnore zones, like the click listener does.
     const nextEl =
-      direction === 'up' ? card.element.parentElement : card.element.firstElementChild;
+      direction === 'up'
+        ? firstUnignoredAncestor(card.element)
+        : firstUnignoredChild(card.element);
     if (!nextEl) {
       return;
     }
@@ -171,7 +209,7 @@ export class NgPointSession {
     return assembleBlocks(this.blocks());
   }
 
-  /** Structured queue entry for one card (wire format for clipboard + MCP). */
+  /** Structured queue entry for one card (wire format for clipboard + queue). */
   toEntry(card: SelectionCard): NgPointQueueEntry {
     const c = card.context;
     const file = c.component?.file

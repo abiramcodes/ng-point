@@ -1,14 +1,16 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { provideNgPoint } from 'ng-point';
+import { NgPointIgnoreDirective, provideNgPoint } from 'ng-point';
 
 @Component({
   selector: 'app-host',
+  imports: [NgPointIgnoreDirective],
   template: `
     <div class="wrap">
       <button type="button" class="target">Save</button>
       <span class="note">a side note</span>
+      <span class="off-limits" ngPointIgnore>off limits</span>
     </div>
   `,
 })
@@ -108,6 +110,90 @@ describe('ng-point end-to-end (demo app integration)', () => {
     });
 
     await vi.waitFor(() => expect(document.querySelector('.ng-point-panel[open]')).toBeNull());
+  });
+
+  it('clearing the context block does not break the next Alt+Click pick', async () => {
+    const { hostEl } = await setupHost();
+
+    const button = hostEl.querySelector('button.target')!;
+    button.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true, altKey: true }),
+    );
+    await vi.waitFor(() => expect(document.querySelector('.ng-point-panel[open]')).toBeTruthy());
+
+    // A user clears the context block (select all, delete).
+    const block = document.querySelector<HTMLTextAreaElement>('.ng-point-block')!;
+    block.value = '';
+    block.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.waitFor(() =>
+      expect(document.querySelector<HTMLTextAreaElement>('.ng-point-block')!.value).toBe(''),
+    );
+
+    // Alt+Click a different element: the panel must respond with a fresh
+    // block for the new target, not silently ignore the click.
+    const note = hostEl.querySelector('span.note')!;
+    note.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true, altKey: true }),
+    );
+
+    await vi.waitFor(() => {
+      const refreshed = document.querySelector<HTMLTextAreaElement>('.ng-point-block')!;
+      expect(refreshed.value).toContain('Element: <span class="note">a side note</span>');
+    });
+  });
+
+  it('a suppressed pick explains itself in the status region, and the block is untouched', async () => {
+    const { hostEl } = await setupHost();
+
+    const button = hostEl.querySelector('button.target')!;
+    button.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true, altKey: true }),
+    );
+    await vi.waitFor(() => expect(document.querySelector('.ng-point-panel[open]')).toBeTruthy());
+
+    hostEl.querySelector('span.off-limits')!.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true, altKey: true }),
+    );
+
+    await vi.waitFor(() =>
+      expect(document.querySelector('.ng-point-status')!.textContent).toContain('ngPointIgnore'),
+    );
+    const block = document.querySelector<HTMLTextAreaElement>('.ng-point-block')!;
+    expect(block.value).toContain('Element: <button type="button" class="target">Save</button>');
+  });
+
+  it('Alt+Click on the panel itself picks the element visually beneath it', async () => {
+    const { hostEl } = await setupHost();
+
+    const button = hostEl.querySelector('button.target')!;
+    button.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true, altKey: true }),
+    );
+    await vi.waitFor(() => expect(document.querySelector('.ng-point-panel[open]')).toBeTruthy());
+
+    // What sits under the pointer: the panel's dialog, then the note span.
+    const dialog = document.querySelector('.ng-point-panel')!;
+    const note = hostEl.querySelector('span.note')!;
+    const doc = document as unknown as { elementsFromPoint?: (x: number, y: number) => Element[] };
+    const original = doc.elementsFromPoint;
+    doc.elementsFromPoint = () => [dialog, note];
+    try {
+      dialog.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          altKey: true,
+          clientX: 10,
+          clientY: 10,
+        }),
+      );
+      await vi.waitFor(() => {
+        const block = document.querySelector<HTMLTextAreaElement>('.ng-point-block')!;
+        expect(block.value).toContain('Element: <span class="note">a side note</span>');
+      });
+    } finally {
+      doc.elementsFromPoint = original;
+    }
   });
 
   it('Alt+Shift+Click adds a second independent context; one Enter commits both', async () => {

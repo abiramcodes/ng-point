@@ -86,6 +86,12 @@
       "root": "packages/ng-point",
       "sourceRoot": "packages/ng-point/src",
       "prefix": "lib",
+      "schematics": {
+        "@schematics/angular:component": {
+          "inlineStyle": true,
+          "inlineTemplate": true
+        }
+      },
       "architect": {
         "build": {
           "builder": "@angular/build:ng-packagr",

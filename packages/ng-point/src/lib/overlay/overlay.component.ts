@@ -1,23 +1,28 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   ViewEncapsulation,
+  afterRenderEffect,
   computed,
   effect,
   inject,
+  OnDestroy,
   signal,
+  viewChild,
   viewChildren,
 } from '@angular/core';
 import { copyText } from '../clipboard';
 import { NG_POINT_CONFIG } from '../config';
-import { clearAllEntries, deleteEntry, postEntries } from '../mcp-bridge';
+import { assembleBlocks } from '../format';
 import type { NgPointQueueEntry } from '../types';
 import { NG_POINT_SESSION } from './tokens';
 import type { SelectionCard } from './session';
 
 const PANEL_WIDTH = 440;
-const PANEL_HEIGHT_ESTIMATE = 520;
+/** Width floor per card in the horizontal cards row (plus the 8px gap). */
+const CARD_MIN_WIDTH = 260;
+// Fallback only until the first real measure (below); jsdom reports 0.
+const PANEL_HEIGHT_FALLBACK = 520;
 
 function clamp(value: number, low: number, high: number): number {
   return Math.min(Math.max(value, low), Math.max(low, high));
@@ -33,16 +38,19 @@ function clamp(value: number, low: number, high: number): number {
  */
 @Component({
   selector: 'ng-point-overlay',
-  imports: [],
   template: `
     <dialog
+      #panel
       class="ng-point-panel"
+      [class.ng-point-dragging]="dragging()"
       [attr.open]="session.open() ? '' : null"
+      [style.width.px]="panelWidth()"
       [style.left.px]="panelLeft()"
       [style.top.px]="panelTop()"
+      (keydown)="onPanelKeydown($event)"
       aria-labelledby="ng-point-title"
     >
-      <header class="ng-point-head">
+      <header class="ng-point-head" (pointerdown)="beginDrag($event)">
         <div>
           <h2 id="ng-point-title" class="ng-point-title">ng-point</h2>
           <p class="ng-point-hint">{{ hint() }}</p>
@@ -57,104 +65,154 @@ function clamp(value: number, low: number, high: number): number {
         </button>
       </header>
 
-      @if (session.cards().length === 0) {
-        <p class="ng-point-empty">
-          Pick an element: {{ pickHint() }} — its context block will appear here for review
-          before anything is copied.
-        </p>
-      }
+      <div class="ng-point-scroll">
+        @if (session.cards().length === 0) {
+          <p class="ng-point-empty">
+            Pick an element: {{ pickHint() }} — its context block will appear here for review before
+            anything is copied.
+          </p>
+        }
 
-      <div class="ng-point-cards">
-        @for (card of session.cards(); track card.id; let i = $index) {
-          <article
-            class="ng-point-card"
-            [class.ng-point-card-active]="session.activeId() === card.id"
-            (click)="activate(card.id)"
-          >
-            <header class="ng-point-card-head">
-              <span class="ng-point-card-name">
-                {{ card.context.component?.name ?? '(no component)' }}
-              </span>
-              @if (card.context.sensitive) {
-                <span class="ng-point-badge">sensitive</span>
-              }
-              @if (session.hasSecretWarning(card)) {
-                <span class="ng-point-badge ng-point-badge-warn" role="status">
-                  possible secret
+        <div class="ng-point-cards">
+          @for (card of session.cards(); track card.id; let i = $index) {
+            <article
+              class="ng-point-card"
+              [class.ng-point-card-active]="session.activeId() === card.id"
+              (click)="activate(card.id)"
+            >
+              <header class="ng-point-card-head">
+                <span class="ng-point-card-name">
+                  {{ card.context.component?.name ?? '(no component)' }}
                 </span>
-              }
-              <span class="ng-point-card-actions">
-                <button
-                  type="button"
-                  class="ng-point-icon-btn"
-                  (click)="retarget(card, 'up')"
-                  aria-label="Retarget selection {{ i + 1 }} to parent element"
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  class="ng-point-icon-btn"
-                  (click)="retarget(card, 'down')"
-                  aria-label="Retarget selection {{ i + 1 }} to first child element"
-                >
-                  ↓
-                </button>
-                <button
-                  type="button"
-                  class="ng-point-text-btn"
-                  (click)="copyCard(card, i)"
-                  aria-label="Copy context block {{ i + 1 }} only, without queueing"
-                >
-                  copy
-                </button>
-                <button
-                  type="button"
-                  class="ng-point-icon-btn"
-                  (click)="remove(card.id)"
-                  aria-label="Remove selection {{ i + 1 }}"
-                >
-                  ✕
-                </button>
-              </span>
-            </header>
+                @if (card.context.sensitive) {
+                  <span class="ng-point-badge">sensitive</span>
+                }
+                @if (session.hasSecretWarning(card)) {
+                  <span class="ng-point-badge ng-point-badge-warn" role="status">
+                    possible secret
+                  </span>
+                }
+                <span class="ng-point-card-actions">
+                  <button
+                    type="button"
+                    class="ng-point-icon-btn"
+                    (click)="retarget(card, 'up')"
+                    aria-label="Retarget selection {{ i + 1 }} to parent element"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    class="ng-point-icon-btn"
+                    (click)="retarget(card, 'down')"
+                    aria-label="Retarget selection {{ i + 1 }} to first child element"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    class="ng-point-text-btn"
+                    (click)="copyCard(card, i)"
+                    aria-label="Copy context block {{ i + 1 }} only, without queueing"
+                  >
+                    copy
+                  </button>
+                  <button
+                    type="button"
+                    class="ng-point-icon-btn"
+                    (click)="remove(card.id)"
+                    aria-label="Remove selection {{ i + 1 }}"
+                  >
+                    ✕
+                  </button>
+                </span>
+              </header>
 
-            <label class="ng-point-label" [attr.for]="'ng-point-block-' + i">
-              Context block
+              <label class="ng-point-label" [attr.for]="'ng-point-block-' + i">
+                Context block
+                <button
+                  type="button"
+                  class="ng-point-text-btn ng-point-regen"
+                  (click)="card.regenerate()"
+                >
+                  regenerate
+                </button>
+              </label>
+              <textarea
+                class="ng-point-block"
+                [id]="'ng-point-block-' + i"
+                rows="8"
+                spellcheck="false"
+                [value]="card.blockText()"
+                (input)="onBlockInput(card, $event)"
+                [attr.aria-label]="'Context block for selection ' + (i + 1) + ' (editable)'"
+              ></textarea>
+
+              <label class="ng-point-label" [attr.for]="'ng-point-instr-' + i">
+                Instruction for this element (optional)
+              </label>
+              <input
+                #instrInput
+                class="ng-point-instr"
+                [id]="'ng-point-instr-' + i"
+                type="text"
+                placeholder="e.g. make this disabled when form is invalid"
+                autocomplete="off"
+                [value]="card.instruction()"
+                (input)="onInstructionInput(card, $event)"
+                (keydown)="onInstructionKeydown(card, $event, i)"
+              />
+            </article>
+          }
+        </div>
+
+        <section class="ng-point-queue" aria-labelledby="ng-point-queue-title">
+          <h3 id="ng-point-queue-title">
+            Recent ({{ session.queue.entries().length }}/{{ config.maxQueueEntries }})
+            @if (session.queue.entries().length > 0) {
               <button
                 type="button"
-                class="ng-point-text-btn ng-point-regen"
-                (click)="card.regenerate()"
+                class="ng-point-text-btn ng-point-copy-queue"
+                (click)="copyAllQueued()"
               >
-                regenerate
+                copy all
               </button>
-            </label>
-            <textarea
-              class="ng-point-block"
-              [id]="'ng-point-block-' + i"
-              rows="8"
-              spellcheck="false"
-              [value]="card.blockText()"
-              (input)="onBlockInput(card, $event)"
-              [attr.aria-label]="'Context block for selection ' + (i + 1) + ' (editable)'"
-            ></textarea>
-
-            <label class="ng-point-label" [attr.for]="'ng-point-instr-' + i">
-              Instruction for this element (optional)
-            </label>
-            <input
-              #instrInput
-              class="ng-point-instr"
-              [id]="'ng-point-instr-' + i"
-              type="text"
-              placeholder="e.g. make this disabled when form is invalid"
-              autocomplete="off"
-              [value]="card.instruction()"
-              (input)="onInstructionInput(card, $event)"
-              (keydown)="onInstructionKeydown(card, $event, i)"
-            />
-          </article>
-        }
+            }
+          </h3>
+          @if (session.queue.entries().length === 0) {
+            <p class="ng-point-queue-empty">Nothing queued yet.</p>
+          } @else {
+            <ul class="ng-point-queue-list">
+              @for (entry of session.queue.entries(); track entry.id) {
+                <li class="ng-point-queue-item">
+                  <span class="ng-point-q-name">{{ entry.component }}</span>
+                  <span class="ng-point-q-file">{{ entry.file }}</span>
+                  <span class="ng-point-q-actions">
+                    <button
+                      type="button"
+                      class="ng-point-text-btn"
+                      (click)="copyEntry(entry)"
+                      aria-label="Copy queued context for {{ entry.component }}"
+                    >
+                      copy
+                    </button>
+                    <button
+                      type="button"
+                      class="ng-point-icon-btn"
+                      (click)="removeEntry(entry)"
+                      aria-label="Remove queued context for {{ entry.component }}"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                </li>
+              }
+            </ul>
+            <button type="button" class="ng-point-text-btn ng-point-clear" (click)="clearQueue()">
+              Clear all
+            </button>
+          }
+        </section>
       </div>
 
       <footer class="ng-point-foot">
@@ -164,52 +222,10 @@ function clamp(value: number, low: number, high: number): number {
           (click)="commitAll()"
           [disabled]="session.cards().length === 0"
         >
-          Copy all &amp; queue (Enter)
+          Copy and queue (Enter)
         </button>
-        <p class="ng-point-status" role="status">{{ statusText() }}</p>
-        <span class="ng-point-mcp" [attr.data-state]="session.mcpStatus()">
-          MCP {{ mcpText() }}
-        </span>
+        <p class="ng-point-status" role="status">{{ statusLine() }}</p>
       </footer>
-
-      <section class="ng-point-queue" aria-labelledby="ng-point-queue-title">
-        <h3 id="ng-point-queue-title">
-          Recent ({{ session.queue.entries().length }}/{{ config.maxQueueEntries }})
-        </h3>
-        @if (session.queue.entries().length === 0) {
-          <p class="ng-point-queue-empty">Nothing queued yet.</p>
-        } @else {
-          <ul class="ng-point-queue-list">
-            @for (entry of session.queue.entries(); track entry.id) {
-              <li class="ng-point-queue-item">
-                <span class="ng-point-q-name">{{ entry.component }}</span>
-                <span class="ng-point-q-file">{{ entry.file }}</span>
-                <span class="ng-point-q-actions">
-                  <button
-                    type="button"
-                    class="ng-point-text-btn"
-                    (click)="copyEntry(entry)"
-                    aria-label="Copy queued context for {{ entry.component }}"
-                  >
-                    copy
-                  </button>
-                  <button
-                    type="button"
-                    class="ng-point-icon-btn"
-                    (click)="removeEntry(entry)"
-                    aria-label="Remove queued context for {{ entry.component }}"
-                  >
-                    ✕
-                  </button>
-                </span>
-              </li>
-            }
-          </ul>
-          <button type="button" class="ng-point-text-btn ng-point-clear" (click)="clearQueue()">
-            Clear all
-          </button>
-        }
-      </section>
     </dialog>
   `,
   styles: `
@@ -230,7 +246,8 @@ function clamp(value: number, low: number, high: number): number {
       flex-direction: column;
       gap: 8px;
       width: min(440px, calc(100vw - 24px));
-      max-height: min(70vh, 560px);
+      max-height: calc(100vh - 16px);
+      max-height: calc(100dvh - 16px);
       margin: 0;
       padding: 10px;
       border: 1px solid var(--ng-point-border);
@@ -269,6 +286,14 @@ function clamp(value: number, low: number, high: number): number {
       align-items: flex-start;
       justify-content: space-between;
       gap: 8px;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .ng-point-panel.ng-point-dragging,
+    .ng-point-panel.ng-point-dragging * {
+      cursor: grabbing;
+      user-select: none;
     }
 
     .ng-point-title {
@@ -284,14 +309,24 @@ function clamp(value: number, low: number, high: number): number {
       color: var(--ng-point-muted);
     }
 
-    .ng-point-cards {
+    .ng-point-scroll {
       flex: 1 1 auto;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       gap: 8px;
       overflow-y: auto;
+    }
+
+    .ng-point-cards {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
       min-height: 40px;
       padding-inline-end: 2px;
+      /* When the panel hits the viewport edge, the row scrolls instead of
+         shrinking cards past their floor. */
+      overflow-x: auto;
     }
 
     .ng-point-card {
@@ -303,6 +338,9 @@ function clamp(value: number, low: number, high: number): number {
       border-radius: 8px;
       background: var(--ng-point-surface);
       cursor: pointer;
+      /* Equal share of the widened panel, never below the floor. */
+      flex: 1 1 0;
+      min-width: 260px;
     }
 
     .ng-point-card-active {
@@ -318,6 +356,11 @@ function clamp(value: number, low: number, high: number): number {
 
     .ng-point-card-name {
       font-weight: 600;
+      /* Narrow cards: long component names ellipsize instead of wrapping. */
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .ng-point-card-actions,
@@ -418,20 +461,6 @@ function clamp(value: number, low: number, high: number): number {
       min-height: 18px;
     }
 
-    .ng-point-mcp {
-      font-size: 10.5px;
-      color: var(--ng-point-muted);
-      white-space: nowrap;
-    }
-
-    .ng-point-mcp[data-state='up'] {
-      color: var(--ng-point-accent);
-    }
-
-    .ng-point-mcp[data-state='down'] {
-      opacity: 0.6;
-    }
-
     .ng-point-queue {
       border-top: 1px solid var(--ng-point-border);
       padding-top: 6px;
@@ -487,33 +516,51 @@ function clamp(value: number, low: number, high: number): number {
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NgPointOverlayComponent {
+export class NgPointOverlayComponent implements OnDestroy {
   protected readonly session = inject(NG_POINT_SESSION);
   protected readonly config = inject(NG_POINT_CONFIG);
 
+  private readonly panelEl = viewChild<ElementRef<HTMLDialogElement>>('panel');
   private readonly instructionInputs = viewChildren<ElementRef<HTMLInputElement>>('instrInput');
   private readonly statusText = signal('');
+  /** The panel's status line: component feedback first, then pick-suppression notices. */
+  protected readonly statusLine = computed(() => this.statusText() || this.session.notice());
+  /** Real rendered height, measured after each render; fallback until then. */
+  private readonly panelHeight = signal(PANEL_HEIGHT_FALLBACK);
+  private readonly viewportW = signal(globalThis.innerWidth ?? 1024);
+  private readonly viewportH = signal(globalThis.innerHeight ?? 768);
+  protected readonly dragging = signal(false);
+  private readonly resizeListener: () => void = () => {
+    this.viewportW.set(globalThis.innerWidth ?? 1024);
+    this.viewportH.set(globalThis.innerHeight ?? 768);
+  };
   private lastStatus = '';
   private lastCardCount = 0;
   private wasOpen = false;
   private previousFocus: HTMLElement | null = null;
 
+  /**
+   * Panel width: one card keeps the compact 440px base; each additional card
+   * widens the panel by a card slot, up to the viewport edge, where the
+   * cards row takes over with horizontal scrolling.
+   */
+  protected readonly panelWidth = computed(() => {
+    const count = this.session.cards().length;
+    const viewport = this.viewportW();
+    const desired = PANEL_WIDTH + Math.max(0, count - 1) * (CARD_MIN_WIDTH + 8);
+    return Math.min(desired, Math.max(8, viewport - 16));
+  });
+
   protected readonly panelLeft = computed(() => {
-    const viewport = globalThis.innerWidth ?? 1024;
-    return clamp(this.session.positionX() + 12, 8, viewport - PANEL_WIDTH - 8);
+    const viewport = this.viewportW();
+    return clamp(this.session.positionX() + 12, 8, Math.max(8, viewport - this.panelWidth() - 8));
   });
 
   protected readonly panelTop = computed(() => {
-    const viewport = globalThis.innerHeight ?? 768;
-    return clamp(this.session.positionY() + 12, 8, viewport - PANEL_HEIGHT_ESTIMATE - 8);
+    const viewport = this.viewportH();
+    return clamp(this.session.positionY() + 12, 8, viewport - this.panelHeight() - 8);
   });
-
-  private readonly bridgeOptions = {
-    endpoint: this.config.mcpEndpoint,
-    token: this.config.mcpToken,
-  };
 
   constructor() {
     // Focus management: move focus to the newest card's instruction input and
@@ -538,6 +585,23 @@ export class NgPointOverlayComponent {
       this.wasOpen = open;
       this.lastCardCount = count;
     });
+
+    // Measure the real panel height after each render so the position clamp
+    // keeps the WHOLE panel on screen, footer included. jsdom reports 0 for
+    // offsetHeight, so the fallback value stays in unit tests.
+    afterRenderEffect(() => {
+      const el = this.panelEl()?.nativeElement;
+      const height = el?.offsetHeight ?? 0;
+      if (height > 0 && height !== this.panelHeight()) {
+        this.panelHeight.set(height);
+      }
+    });
+
+    globalThis.addEventListener('resize', this.resizeListener);
+  }
+
+  ngOnDestroy(): void {
+    globalThis.removeEventListener('resize', this.resizeListener);
   }
 
   protected pickHint(): string {
@@ -550,15 +614,47 @@ export class NgPointOverlayComponent {
     return `${this.pickHint()} · Alt+↑/↓ retarget · Enter copies & queues · Esc discards`;
   }
 
-  protected mcpText(): string {
-    switch (this.session.mcpStatus()) {
-      case 'up':
-        return 'connected';
-      case 'down':
-        return 'not running';
-      default:
-        return 'checking…';
+  /** Header drag: pointer-captured moves update the panel position, clamped. */
+  protected beginDrag(event: PointerEvent): void {
+    if ((event.target as HTMLElement | null)?.closest('button')) {
+      return; // the close button stays clickable
     }
+    event.preventDefault();
+    const el = event.currentTarget as HTMLElement;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const originX = this.session.positionX();
+    const originY = this.session.positionY();
+    try {
+      el.setPointerCapture?.(event.pointerId);
+    } catch {
+      // no active pointer (e.g. jsdom) — dragging still works via listeners
+    }
+    this.dragging.set(true);
+    const move = (e: PointerEvent) => {
+      this.session.moveTo(
+        originX + (e.clientX - startX),
+        originY + (e.clientY - startY),
+        this.viewportW(),
+        this.viewportH(),
+        this.panelHeight(),
+        this.panelWidth(),
+      );
+    };
+    const stop = (e: PointerEvent) => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', stop);
+      el.removeEventListener('pointercancel', stop);
+      try {
+        el.releasePointerCapture?.(e.pointerId);
+      } catch {
+        // capture already released or never set
+      }
+      this.dragging.set(false);
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', stop);
+    el.addEventListener('pointercancel', stop);
   }
 
   protected activate(id: string): void {
@@ -593,7 +689,28 @@ export class NgPointOverlayComponent {
     }
   }
 
-  /** Commit: copy every block, queue each as its own entry, mirror to MCP, close. */
+  /**
+   * Panel-level Enter: committing works with no instruction typed, from
+   * anywhere on the panel. The focused instruction input handles its own
+   * Enter first (defaultPrevented), textareas keep Enter as newline, and
+   * buttons keep their native activation.
+   */
+  protected onPanelKeydown(event: KeyboardEvent): void {
+    if (event.defaultPrevented) {
+      return;
+    }
+    if (event.key !== 'Enter' || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+    const tag = (event.target as HTMLElement | null)?.tagName;
+    if (tag === 'TEXTAREA' || tag === 'BUTTON') {
+      return;
+    }
+    event.preventDefault();
+    void this.commitAll();
+  }
+
+  /** Commit: copy every block, queue each as its own entry, close. */
   protected async commitAll(): Promise<void> {
     const cards = this.session.cards();
     if (cards.length === 0) {
@@ -608,8 +725,6 @@ export class NgPointOverlayComponent {
       return;
     }
     this.session.queue.addMany(entries);
-    // Fire-and-forget: the clipboard is the primary path, MCP is a mirror.
-    void postEntries(this.bridgeOptions, entries);
     this.setStatus(`Copied ${entries.length} context(s) and queued them.`);
     this.session.close();
   }
@@ -629,15 +744,24 @@ export class NgPointOverlayComponent {
 
   protected removeEntry(entry: NgPointQueueEntry): void {
     this.session.queue.remove(entry.id);
-    void deleteEntry(this.bridgeOptions, entry.id);
     this.setStatus(`Removed queued context for ${entry.component}.`);
   }
 
   protected clearQueue(): void {
     const count = this.session.queue.entries().length;
     this.session.queue.clear();
-    void clearAllEntries(this.bridgeOptions);
-    this.setStatus(count ? 'Cleared local queue and MCP mirror.' : 'Queue already empty.');
+    this.setStatus(count ? 'Cleared the local queue.' : 'Queue already empty.');
+  }
+
+  /** Copies every queued entry as one joined block — the whole recent queue. */
+  protected copyAllQueued(): void {
+    const entries = this.session.queue.entries();
+    if (entries.length === 0) {
+      return;
+    }
+    void copyText(assembleBlocks(entries.map((entry) => entry.block))).then((ok) => {
+      this.setStatus(ok ? `Copied all ${entries.length} queued context(s).` : 'Copy failed.');
+    });
   }
 
   protected close(): void {
