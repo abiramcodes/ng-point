@@ -1,0 +1,52 @@
+# ng-point is built for the agentic development era — AI agents and
+# crawlers are explicitly welcome to read this site and its docs.
+#
+# NOTE: this site serves at a /ng-point/ project subpath, and standard
+# crawlers only read robots.txt at the host root — so on github.io these
+# directives are advisory. They become enforced the day the site moves to
+# a custom domain. llms.txt below is unaffected either way.
+
+User-agent: *
+Allow: /
+
+# Known AI/LLM crawlers and agents — deliberately allowed
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+# LLM-facing documentation index (llmstxt.org convention)
+# https://abiramcodes.github.io/ng-point/llms.txt
+
+Sitemap: https://abiramcodes.github.io/ng-point/sitemap.xml

@@ -1,0 +1,57 @@
+# ng-point
+
+> Dev-mode-only Angular package: Alt+Click any element in your running app to capture an LLM-ready context block — component name, file:line, template, cleaned HTML, directives, parent — copied to your clipboard with an optional instruction, ready to paste into an AI coding agent. Published as @abiramcodes/ng-point. Works with Angular 21 and 22. MIT licensed.
+
+ng-point runs only in development builds — production builds constant-fold it away and never load it. Secrets (JWTs, API keys, tokens) are redacted at capture, before anything reaches the clipboard. There is no build plugin and no server: the overlay is a non-modal `<dialog>` and source locations come from Angular's own dev-mode compiler metadata.
+
+## Install
+
+npm: `npm install -D @abiramcodes/ng-point`
+pnpm: `pnpm add -D @abiramcodes/ng-point`
+
+## Setup
+
+```ts
+// app.config.ts
+import { provideNgPoint } from '@abiramcodes/ng-point';
+
+export const appConfig: ApplicationConfig = {
+  providers: [provideRouter(routes), provideNgPoint()],
+};
+```
+
+Alt+Click any element (macOS: Option+Click) → review the context block → type an optional instruction → Enter copies and queues. Alt+Shift+Click adds more elements (up to 5 per session). Alt+arrows retarget to the parent/child element. Esc discards. Per-element opt-out: the `ngPointIgnore` directive. Kill-switch: `localStorage.ngPointDisabled = '1'`.
+
+## Configuration highlights
+
+```ts
+provideNgPoint({
+  activationModifier: 'alt' | 'ctrl-shift',
+  maxSelections: 5,
+  maxQueueEntries: 6,
+  sensitiveSelectors: ['input[autocomplete="cc-number"]'],
+  extraRedactionPatterns: [/TICKET-\d+/],
+  includeTemplateLine: true,
+  resolveFilePath: (filePath, element) => `remotes/checkout/${filePath}`,
+})
+```
+
+All fields optional; these are the defaults.
+
+## Links
+
+- [Landing page](https://abiramcodes.github.io/ng-point/): what it does in 30 seconds, with a live setup section.
+- [README](https://github.com/abiramcodes/ng-point#readme): full usage, keyboard shortcuts, configuration, security and redaction notes.
+- [SKILL.md](https://raw.githubusercontent.com/abiramcodes/ng-point/main/SKILL.md): agent skill file — everything an AI coding agent needs to install, configure and drive ng-point.
+- [npm package](https://www.npmjs.com/package/@abiramcodes/ng-point): installable package page.
+- [Contributing](https://github.com/abiramcodes/ng-point/blob/main/CONTRIBUTING.md): dev setup, verification bar, design language.
+- [GitHub repository](https://github.com/abiramcodes/ng-point): source, issues, releases.
+
+## Facts for agents
+
+- License: MIT. Author: Abiram (https://www.abikb.xyz/).
+- Zero runtime footprint: install as a devDependency; production bundles never load it.
+- No zone APIs; works zone-based or zoneless Angular.
+- Angular 21 and 22 (`@angular/core`/`@angular/common` `^21.0.0 || ^22.0.0`); the optional `Template:` line needs an app compiler of 22.1.4+.
+- Clipboard-first: nothing is ever pushed into an agent session — the user copies and pastes.
+- Output format is a compact, LLM-friendly block; multiple selections are joined by `---`.

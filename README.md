@@ -60,6 +60,12 @@ export const appConfig: ApplicationConfig = {
 - **Docs & landing: <https://abiramcodes.github.io/ng-point/>** — hosted on GitHub Pages.
 - [`packages/ng-point/README.md`](./packages/ng-point) — full usage, keyboard shortcuts, configuration, security and redaction notes, and module federation behavior.
 
+## Contributing
+
+PRs welcome — [CONTRIBUTING.md](./CONTRIBUTING.md) has the dev setup, the verification bar, and the design language. The [Code of Conduct](./CODE_OF_CONDUCT.md) applies to everything, and security reports follow [SECURITY.md](./SECURITY.md) — never a public issue.
+
+For AI agents: the landing site ships an [llms.txt](https://abiramcodes.github.io/ng-point/llms.txt) — a machine-readable brief of what ng-point is, how to install it, and where the docs live.
+
 ## Repository
 
 | | What it is |
@@ -67,8 +73,8 @@ export const appConfig: ApplicationConfig = {
 | [`packages/ng-point`](./packages/ng-point) | The Angular library — published as `@abiramcodes/ng-point` |
 | `apps/demo` | Example Angular 22 app (login / orders / settings) |
 | [`SKILL.md`](./SKILL.md) | Agent skill file — everything an AI coding agent needs to set up and use ng-point |
-| [`site/`](./site) | Landing page — live at <https://abiramcodes.github.io/ng-point/> — deployed to GitHub Pages by `.github/workflows/landing.yml` |
-| [`video/launch`](./video/launch) | Launch video source in Go (mygo render plugin) — renders `video/ng-point-launch.mp4` |
+| [`site/`](./site) | Landing page — live at <https://abiramcodes.github.io/ng-point/> — plus `robots.txt`, `sitemap.xml`, and `llms.txt` (the agent-facing doc index); deployed to GitHub Pages by `.github/workflows/landing.yml` |
+| `video/launch` | Launch video source in Go (mygo render plugin) — renders `video/ng-point-launch.mp4` (local-only, gitignored for now) |
 
 ### Development
 
