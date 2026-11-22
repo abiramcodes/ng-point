@@ -41,7 +41,7 @@ brochure, duplicates content that already lives in the repo READMEs, and dropped
 
 Angular developers who use AI coding agents. Their job on this page: understand "point at an
 element, your agent gets the exact code" within 5 seconds, then either run
-`npm i ng-point` (copy button on the page) or open the README.
+`npm i -D @abiramcodes/ng-point` (copy button on the page) or open the README.
 
 ## 5. Final page structure (single screen + footer)
 
