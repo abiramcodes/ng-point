@@ -53,6 +53,7 @@ export const appConfig: ApplicationConfig = {
 
 ## Learn more
 
+- **Docs & landing: <https://abiramcodes.github.io/ng-point/>** — hosted on GitHub Pages.
 - [`packages/ng-point/README.md`](./packages/ng-point) — full usage, keyboard shortcuts, configuration, security and redaction notes, and module federation behavior.
 
 ## Repository
@@ -62,7 +63,7 @@ export const appConfig: ApplicationConfig = {
 | [`packages/ng-point`](./packages/ng-point) | The Angular library — published as `ng-point` |
 | `apps/demo` | Example Angular 22 app (login / orders / settings) |
 | [`SKILL.md`](./SKILL.md) | Agent skill file — everything an AI coding agent needs to set up and use ng-point |
-| [`site/`](./site) | Landing page, deployed to GitHub Pages by `.github/workflows/landing.yml` |
+| [`site/`](./site) | Landing page — live at <https://abiramcodes.github.io/ng-point/> — deployed to GitHub Pages by `.github/workflows/landing.yml` |
 | [`video/launch`](./video/launch) | Launch video source in Go (mygo render plugin) — renders `video/ng-point-launch.mp4` |
 
 ### Development

@@ -68,27 +68,45 @@ describe('NgPointOverlayComponent', () => {
     expect(dialog.hasAttribute('open')).toBe(false);
   });
 
-  it('labels the pick modifier Alt on non-Apple platforms', async () => {
+  it('labels the key legend Alt on non-Apple platforms', async () => {
     const el = await createFixture();
+    session.openWith(context('A'), document.createElement('button'), 1, 1);
+    await TestBed.flushEffects();
+    await Promise.resolve();
+
     const hint = el.querySelector<HTMLElement>('.ng-point-hint')!;
-    expect(hint.textContent).toContain('Alt+Click an element');
-    expect(hint.textContent).toContain('Alt+↑/↓ retarget');
+    expect(hint.textContent).toContain('Alt+click pick');
+    expect(hint.textContent).toContain('Alt+shift+click add');
+    expect(hint.textContent).toContain('enter copy');
+
+    session.removeCard(session.cards()[0]!.id);
+    await TestBed.flushEffects();
+    await Promise.resolve();
+    expect(el.querySelector('.ng-point-hint')).toBeNull();
     const empty = el.querySelector<HTMLElement>('.ng-point-empty')!;
-    expect(empty.textContent).toContain('Alt+Click an element');
+    expect(empty.textContent).toContain('Alt+Click another element');
   });
 
-  it('labels the pick modifier Option on Apple platforms', async () => {
+  it('labels the key legend Option on Apple platforms', async () => {
     vi.stubGlobal('navigator', {
       clipboard: { writeText: clipboardWriteText },
       platform: 'MacIntel',
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
     });
     const el = await createFixture();
+    session.openWith(context('A'), document.createElement('button'), 1, 1);
+    await TestBed.flushEffects();
+    await Promise.resolve();
+
     const hint = el.querySelector<HTMLElement>('.ng-point-hint')!;
-    expect(hint.textContent).toContain('Option+Click an element');
-    expect(hint.textContent).toContain('Option+↑/↓ retarget');
+    expect(hint.textContent).toContain('Option+click pick');
+    expect(hint.textContent).toContain('Option+shift+click add');
+
+    session.removeCard(session.cards()[0]!.id);
+    await TestBed.flushEffects();
+    await Promise.resolve();
     const empty = el.querySelector<HTMLElement>('.ng-point-empty')!;
-    expect(empty.textContent).toContain('Option+Click an element');
+    expect(empty.textContent).toContain('Option+Click another element');
   });
 
   it('renders the card context fields once opened', async () => {

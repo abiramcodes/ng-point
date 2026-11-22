@@ -112,6 +112,24 @@ describe('NgPointSession lifecycle', () => {
     expect(replaced.blockText()).toContain('Instruction: fix this');
   });
 
+  it('a pick into an open-but-empty session starts fresh instead of being dropped', () => {
+    const { session } = makeSession();
+    session.openWith(context('A'), document.createElement('button'), 40, 40);
+    session.removeCard(session.cards()[0]!.id);
+    expect(session.open()).toBe(true);
+    expect(session.cards().length).toBe(0);
+
+    // The click listener routes a plain re-pick through replaceActive when the
+    // session is open; with no active card left it must fall back to adding.
+    session.replaceActive(context('B'), document.createElement('input'));
+
+    expect(session.cards().length).toBe(1);
+    expect(session.cards()[0]!.context.component?.name).toBe('B');
+    expect(session.activeId()).toBe(session.cards()[0]!.id);
+    // The panel keeps its dragged position — no teleport to the click point.
+    expect(session.positionX()).toBe(40);
+  });
+
   it('retargets a card up to the parent element and regenerates its context', () => {
     const { session } = makeSession();
     const parent = document.createElement('div');

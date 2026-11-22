@@ -53,8 +53,12 @@ function clamp(value: number, low: number, high: number): number {
     >
       <header class="ng-point-head" (pointerdown)="beginDrag($event)">
         <div>
-          <h2 id="ng-point-title" class="ng-point-title">ng-point</h2>
-          <p class="ng-point-hint">{{ hint() }}</p>
+          <h2 id="ng-point-title" class="ng-point-title">
+            <span class="ng-point-mark" aria-hidden="true">❮</span>ng-point
+          </h2>
+          @if (session.cards().length > 0) {
+            <p class="ng-point-hint">{{ hint() }}</p>
+          }
         </div>
         <button
           type="button"
@@ -68,10 +72,7 @@ function clamp(value: number, low: number, high: number): number {
 
       <div class="ng-point-scroll">
         @if (session.cards().length === 0) {
-          <p class="ng-point-empty">
-            Pick an element: {{ pickHint() }} — its context block will appear here for review before
-            anything is copied.
-          </p>
+          <p class="ng-point-empty">Nothing selected — {{ pickHint() }} another element.</p>
         }
 
         <div class="ng-point-cards">
@@ -85,14 +86,6 @@ function clamp(value: number, low: number, high: number): number {
                 <span class="ng-point-card-name">
                   {{ card.context.component?.name ?? '(no component)' }}
                 </span>
-                @if (card.context.sensitive) {
-                  <span class="ng-point-badge">sensitive</span>
-                }
-                @if (session.hasSecretWarning(card)) {
-                  <span class="ng-point-badge ng-point-badge-warn" role="status">
-                    possible secret
-                  </span>
-                }
                 <span class="ng-point-card-actions">
                   <button
                     type="button"
@@ -120,7 +113,7 @@ function clamp(value: number, low: number, high: number): number {
                   </button>
                   <button
                     type="button"
-                    class="ng-point-icon-btn"
+                    class="ng-point-icon-btn ng-point-remove"
                     (click)="remove(card.id)"
                     aria-label="Remove selection {{ i + 1 }}"
                   >
@@ -128,9 +121,24 @@ function clamp(value: number, low: number, high: number): number {
                   </button>
                 </span>
               </header>
+              <div class="ng-point-card-meta">
+                @if (card.context.component; as comp) {
+                  <span class="ng-point-card-file" [attr.title]="comp.file + ':' + comp.line">
+                    {{ comp.file }}:{{ comp.line }}
+                  </span>
+                }
+                @if (card.context.sensitive) {
+                  <span class="ng-point-badge">sensitive</span>
+                }
+                @if (session.hasSecretWarning(card)) {
+                  <span class="ng-point-badge ng-point-badge-warn" role="status">
+                    possible secret
+                  </span>
+                }
+              </div>
 
               <label class="ng-point-label" [attr.for]="'ng-point-block-' + i">
-                Context block
+                context block
                 <button
                   type="button"
                   class="ng-point-text-btn ng-point-regen"
@@ -150,7 +158,7 @@ function clamp(value: number, low: number, high: number): number {
               ></textarea>
 
               <label class="ng-point-label" [attr.for]="'ng-point-instr-' + i">
-                Instruction for this element (optional)
+                instruction (optional)
               </label>
               <input
                 #instrInput
@@ -167,10 +175,10 @@ function clamp(value: number, low: number, high: number): number {
           }
         </div>
 
-        <section class="ng-point-queue" aria-labelledby="ng-point-queue-title">
-          <h3 id="ng-point-queue-title">
-            Recent ({{ session.queue.entries().length }}/{{ config.maxQueueEntries }})
-            @if (session.queue.entries().length > 0) {
+        @if (session.queue.entries().length > 0) {
+          <section class="ng-point-queue" aria-labelledby="ng-point-queue-title">
+            <h3 id="ng-point-queue-title">
+              recent {{ session.queue.entries().length }}/{{ config.maxQueueEntries }}
               <button
                 type="button"
                 class="ng-point-text-btn ng-point-copy-queue"
@@ -178,11 +186,7 @@ function clamp(value: number, low: number, high: number): number {
               >
                 copy all
               </button>
-            }
-          </h3>
-          @if (session.queue.entries().length === 0) {
-            <p class="ng-point-queue-empty">Nothing queued yet.</p>
-          } @else {
+            </h3>
             <ul class="ng-point-queue-list">
               @for (entry of session.queue.entries(); track entry.id) {
                 <li class="ng-point-queue-item">
@@ -199,7 +203,7 @@ function clamp(value: number, low: number, high: number): number {
                     </button>
                     <button
                       type="button"
-                      class="ng-point-icon-btn"
+                      class="ng-point-icon-btn ng-point-remove"
                       (click)="removeEntry(entry)"
                       aria-label="Remove queued context for {{ entry.component }}"
                     >
@@ -210,10 +214,10 @@ function clamp(value: number, low: number, high: number): number {
               }
             </ul>
             <button type="button" class="ng-point-text-btn ng-point-clear" (click)="clearQueue()">
-              Clear all
+              clear all
             </button>
-          }
-        </section>
+          </section>
+        }
       </div>
 
       <footer class="ng-point-foot">
@@ -233,10 +237,11 @@ function clamp(value: number, low: number, high: number): number {
     .ng-point-panel {
       --ng-point-bg: #14141b;
       --ng-point-surface: #1d1d27;
+      --ng-point-inset: #0e0e15;
       --ng-point-text: #e9e9f2;
-      --ng-point-muted: #9a9aad;
-      --ng-point-border: #343442;
-      --ng-point-accent: #7aa2ff;
+      --ng-point-muted: #8f8fa3;
+      --ng-point-border: #2c2c3a;
+      --ng-point-accent: #d40f62;
       --ng-point-danger: #ff8080;
       --ng-point-warn: #ffb84d;
 
@@ -245,18 +250,17 @@ function clamp(value: number, low: number, high: number): number {
       z-index: 2147483646;
       display: none;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       width: min(440px, calc(100vw - 24px));
       max-height: calc(100vh - 16px);
       max-height: calc(100dvh - 16px);
       margin: 0;
-      padding: 10px;
+      padding: 12px;
       border: 1px solid var(--ng-point-border);
-      border-radius: 10px;
       background: var(--ng-point-bg);
       color: var(--ng-point-text);
       font: 12.5px/1.5 ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
-      box-shadow: 0 12px 40px rgb(0 0 0 / 45%);
+      box-shadow: 0 16px 48px rgb(0 0 0 / 50%);
       overscroll-behavior: contain;
     }
 
@@ -267,11 +271,12 @@ function clamp(value: number, low: number, high: number): number {
     @media (prefers-color-scheme: light) {
       .ng-point-panel {
         --ng-point-bg: #ffffff;
-        --ng-point-surface: #f4f4f8;
+        --ng-point-surface: #f2f2f6;
+        --ng-point-inset: #e9e9ef;
         --ng-point-text: #1c1c24;
-        --ng-point-muted: #66667a;
+        --ng-point-muted: #6a6a7e;
         --ng-point-border: #d8d8e2;
-        --ng-point-accent: #2f5fd0;
+        --ng-point-accent: #d40f62;
         --ng-point-danger: #b3261e;
         --ng-point-warn: #92600a;
       }
@@ -299,15 +304,26 @@ function clamp(value: number, low: number, high: number): number {
 
     .ng-point-title {
       margin: 0;
-      font-size: 14px;
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+
+    .ng-point-mark {
+      margin-inline-end: 2px;
+      color: var(--ng-point-accent);
     }
 
     .ng-point-hint,
-    .ng-point-empty,
-    .ng-point-queue-empty {
-      margin: 2px 0 0;
+    .ng-point-empty {
+      margin: 3px 0 0;
       color: var(--ng-point-muted);
+      font-size: 10.5px;
+      line-height: 1.45;
+    }
+
+    .ng-point-empty {
+      padding-block: 6px 2px;
     }
 
     .ng-point-scroll {
@@ -315,7 +331,7 @@ function clamp(value: number, low: number, high: number): number {
       min-height: 0;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       overflow-y: auto;
     }
 
@@ -333,10 +349,9 @@ function clamp(value: number, low: number, high: number): number {
     .ng-point-card {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      padding: 8px;
+      gap: 6px;
+      padding: 10px;
       border: 1px solid var(--ng-point-border);
-      border-radius: 8px;
       background: var(--ng-point-surface);
       cursor: pointer;
       /* Equal share of the widened panel, never below the floor. */
@@ -351,7 +366,6 @@ function clamp(value: number, low: number, high: number): number {
     .ng-point-card-head {
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
       gap: 6px;
     }
 
@@ -364,87 +378,120 @@ function clamp(value: number, low: number, high: number): number {
       white-space: nowrap;
     }
 
-    .ng-point-card-actions,
-    .ng-point-q-actions {
+    .ng-point-card-actions {
       margin-inline-start: auto;
       display: flex;
-      gap: 4px;
+      gap: 2px;
+    }
+
+    /* Provenance line: the file:line the user picked for, on top of the card
+       instead of buried in the block text. Badges are plain text metadata —
+       no pill chrome. */
+    .ng-point-card-meta {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .ng-point-card-file {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--ng-point-muted);
+      font-size: 10.5px;
     }
 
     .ng-point-badge {
-      padding: 0 6px;
-      border: 1px solid var(--ng-point-warn);
-      border-radius: 999px;
       color: var(--ng-point-warn);
       font-size: 10.5px;
-      line-height: 18px;
       white-space: nowrap;
+    }
+
+    .ng-point-badge-warn {
+      font-weight: 700;
     }
 
     .ng-point-label {
       display: flex;
       align-items: center;
       gap: 6px;
-      color: var(--ng-point-muted);
-      font-size: 11px;
       margin-top: 2px;
+      color: var(--ng-point-muted);
+      font-size: 10.5px;
+    }
+
+    /* Fields are borderless insets: the card is the only box; a field reads
+       as a darker writing surface inside it. */
+    .ng-point-block,
+    .ng-point-instr {
+      width: 100%;
+      padding: 6px 8px;
+      border: none;
+      background: var(--ng-point-inset);
+      color: var(--ng-point-text);
+      font: inherit;
     }
 
     .ng-point-block {
-      width: 100%;
       resize: vertical;
-      padding: 6px;
-      border: 1px solid var(--ng-point-border);
-      border-radius: 6px;
-      background: var(--ng-point-bg);
-      color: var(--ng-point-text);
-      font: inherit;
       white-space: pre;
     }
 
-    .ng-point-instr {
-      width: 100%;
-      padding: 6px;
-      border: 1px solid var(--ng-point-border);
-      border-radius: 6px;
-      background: var(--ng-point-bg);
-      color: var(--ng-point-text);
-      font: inherit;
-    }
-
+    /* Ghost actions: no box until hover, so the component name owns the card
+       header and queue rows stay quiet. */
     .ng-point-icon-btn,
-    .ng-point-text-btn,
-    .ng-point-commit,
-    .ng-point-clear {
-      min-block-size: 24px;
-      min-inline-size: 24px;
-      padding: 2px 8px;
-      border: 1px solid var(--ng-point-border);
-      border-radius: 6px;
+    .ng-point-text-btn {
+      min-block-size: 22px;
+      min-inline-size: 22px;
+      padding: 1px 7px;
+      border: none;
       background: transparent;
-      color: var(--ng-point-text);
+      color: var(--ng-point-muted);
       font: inherit;
       cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .ng-point-icon-btn:hover,
+    .ng-point-text-btn:hover {
+      background: var(--ng-point-bg);
+      color: var(--ng-point-text);
     }
 
     .ng-point-text-btn {
-      font-size: 11px;
-      color: var(--ng-point-muted);
+      font-size: 10.5px;
+    }
+
+    .ng-point-remove:hover {
+      background: var(--ng-point-bg);
+      color: var(--ng-point-danger);
     }
 
     .ng-point-regen {
       margin-inline-start: auto;
     }
 
+    /* The one loud element: committing carries the brand accent. */
     .ng-point-commit {
+      min-block-size: 28px;
+      padding: 4px 14px;
+      border: 1px solid var(--ng-point-accent);
       background: var(--ng-point-accent);
-      border-color: var(--ng-point-accent);
       color: #ffffff;
+      font: inherit;
       font-weight: 600;
+      cursor: pointer;
+    }
+
+    .ng-point-commit:hover:not(:disabled) {
+      filter: brightness(1.12);
     }
 
     .ng-point-commit:disabled {
-      opacity: 0.5;
+      opacity: 0.45;
       cursor: not-allowed;
     }
 
@@ -459,23 +506,33 @@ function clamp(value: number, low: number, high: number): number {
       flex: 1 1 160px;
       margin: 0;
       color: var(--ng-point-muted);
+      font-size: 11px;
       min-height: 18px;
     }
 
+    /* The queue renders only when it has entries; nothing announces emptiness. */
     .ng-point-queue {
       border-top: 1px solid var(--ng-point-border);
-      padding-top: 6px;
+      padding-top: 8px;
     }
 
     .ng-point-queue h3 {
-      margin: 0 0 4px;
-      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 6px;
+      font-size: 10.5px;
+      font-weight: 400;
       color: var(--ng-point-muted);
+    }
+
+    .ng-point-copy-queue {
+      margin-inline-start: auto;
     }
 
     .ng-point-queue-list {
       list-style: none;
-      margin: 0 0 4px;
+      margin: 0 0 6px;
       padding: 0;
       display: flex;
       flex-direction: column;
@@ -496,16 +553,26 @@ function clamp(value: number, low: number, high: number): number {
     }
 
     .ng-point-q-file {
-      color: var(--ng-point-muted);
+      flex: 1 1 auto;
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      flex: 1 1 auto;
+      color: var(--ng-point-muted);
+    }
+
+    .ng-point-q-actions {
+      display: flex;
+      gap: 2px;
     }
 
     .ng-point-clear {
       color: var(--ng-point-danger);
-      border-color: var(--ng-point-danger);
+    }
+
+    .ng-point-clear:hover {
+      background: var(--ng-point-bg);
+      color: var(--ng-point-danger);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -612,14 +679,20 @@ export class NgPointOverlayComponent implements OnDestroy {
    */
   private readonly altLabel = isMacPlatform() ? 'Option' : 'Alt';
 
+  /** The bare pick gesture, used inline in the empty-state direction. */
   protected pickHint(): string {
-    return this.config.activationModifier === 'alt'
-      ? `${this.altLabel}+Click an element (${this.altLabel}+Shift+Click to add more)`
-      : `Ctrl+Shift+Click an element (Ctrl+Shift+${this.altLabel}+Click to add more)`;
+    return this.config.activationModifier === 'alt' ? `${this.altLabel}+Click` : 'Ctrl+Shift+Click';
   }
 
+  /** One-line key legend, shown while there are cards to act on. */
   protected hint(): string {
-    return `${this.pickHint()} · ${this.altLabel}+↑/↓ retarget · Enter copies & queues · Esc discards`;
+    const pick =
+      this.config.activationModifier === 'alt' ? `${this.altLabel}+click` : 'ctrl+shift+click';
+    const add =
+      this.config.activationModifier === 'alt'
+        ? `${this.altLabel}+shift+click`
+        : `ctrl+shift+${this.altLabel}+click`;
+    return `${pick} pick · ${add} add · enter copy · esc`;
   }
 
   /** Header drag: pointer-captured moves update the panel position, clamped. */

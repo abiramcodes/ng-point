@@ -6,6 +6,8 @@ Dev-mode-only Angular package. **Alt+Click** any element in your running dev app
 - **Does nothing in production builds.**
 - **No custom build plugin, no UI framework** — source locations come from the Angular AOT compiler's own dev-mode metadata; the overlay is a native `<dialog>` with a few KB of self-contained CSS.
 
+**Docs & landing:** <https://abiramcodes.github.io/ng-point/>
+
 Works with Angular **21 and 22** (`@angular/core`/`@angular/common` `^21.0.0 || ^22.0.0`). The only version-dependent feature is the optional `Template:` line, which needs an app compiler of **22.1.4+** (see the setup variations below); everything else behaves identically on 21 and 22, zone-based or zoneless — ng-point uses no zone APIs and inherits your app's change-detection mode.
 
 ## Install
@@ -96,7 +98,7 @@ Install and `provideNgPoint()` are identical on every supported version. The onl
 **macOS vs Windows/Linux — same gesture, different keycap.** The pick modifier is the key
 labeled **option ⌥** on Apple keyboards and **Alt** everywhere else. Both set the same
 `altKey` event property, so every interaction above behaves identically on all platforms;
-the panel's status line prints the label yours uses (`Option+Click` on a Mac, `Alt+Click`
+the panel's hints print the label yours uses (`Option+Click` on a Mac, `Alt+Click`
 elsewhere). The `activationModifier: 'ctrl-shift'` mode is identical everywhere too — its
 add-click reads `Ctrl+Shift+Option+Click` on a Mac.
 

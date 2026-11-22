@@ -7,6 +7,8 @@ parent — copied to the clipboard with an optional instruction, ready for an AI
 If you are an AI agent working in a project that has ng-point installed (or should have it),
 this file tells you everything you need to set it up, use it, and configure it.
 
+Hosted docs & landing: <https://abiramcodes.github.io/ng-point/>
+
 ## Install
 
 ```bash
@@ -57,8 +59,8 @@ Lines are omitted when empty or unavailable — no invented data.
 
 **Same key on every platform.** On a MacBook the pick modifier is the keycap labeled
 **option ⌥**; on Windows and Linux it is **Alt**. Both set the browser's `altKey` event
-property, so picking, adding, and retargeting behave identically everywhere — the panel
-just prints the label your platform uses (`Option+Click` on a Mac, `Alt+Click` elsewhere).
+property, so picking, adding, and retargeting behave identically everywhere — the panel's
+hints print the label your platform uses (`Option+Click` on a Mac, `Alt+Click` elsewhere).
 `Ctrl+Shift+Click` activation (`activationModifier: 'ctrl-shift'`) works unchanged on all
 platforms; its add-click is `Ctrl+Shift+Option+Click` on a Mac.
 

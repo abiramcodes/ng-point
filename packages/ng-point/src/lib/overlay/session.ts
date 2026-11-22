@@ -134,6 +134,10 @@ export class NgPointSession {
     const cards = this.cards();
     const index = cards.findIndex((card) => card.id === activeId);
     if (index < 0) {
+      // The session is open but empty (the last card was removed): a new pick
+      // starts fresh instead of being silently dropped — the panel's empty
+      // state promises exactly that.
+      this.addSelection(context, element);
       return;
     }
     const old = cards[index];
