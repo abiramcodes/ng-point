@@ -12,7 +12,11 @@ Hosted docs & landing: <https://abiramcodes.github.io/ng-point/>
 ## Install
 
 ```bash
+# npm
 npm install -D @abiramcodes/ng-point
+
+# pnpm
+pnpm add -D @abiramcodes/ng-point
 ```
 
 DevDependency — the provider is constant-folded out of production builds.

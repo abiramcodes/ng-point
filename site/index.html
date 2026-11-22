@@ -301,7 +301,7 @@
     /* ---- install snippet ---- */
     .copyable {
       position: relative;
-      max-inline-size: 320px;
+      max-inline-size: 340px;
     }
     .copyable pre {
       margin: 0;
@@ -384,7 +384,7 @@
       border-color: var(--pick);
     }
     @media (prefers-reduced-motion: no-preference) {
-      .copyable::before {
+      .hero .copyable::before {
         background: conic-gradient(
           from var(--glint-angle),
           transparent 0deg 300deg,
@@ -399,7 +399,7 @@
         mask-composite: exclude;
         animation: glint-orbit 9s linear infinite;
       }
-      html[data-anim-paused] .copyable::before {
+      html[data-anim-paused] .hero .copyable::before {
         animation-play-state: paused;
       }
       @keyframes glint-orbit {
@@ -717,6 +717,76 @@
       color: var(--pick);
     }
 
+    /* ---- setup: the two copyable steps, nothing to leave the page for ---- */
+    .setup {
+      border-block-start: 1px solid var(--rule);
+    }
+    .setup .wrap {
+      padding-block: 40px 48px;
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: 24px;
+    }
+    .setup h2 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .steps {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: step;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .steps h3 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      counter-increment: step;
+    }
+    .steps h3::before {
+      content: counter(step, decimal-leading-zero) '\00a0\00a0';
+      color: var(--dim);
+    }
+    .setup .copyable {
+      max-inline-size: 520px;
+    }
+    .setup-note {
+      margin: 20px 0 0;
+      color: var(--dim);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* npm / pnpm segmented control: the active manager inverts, like a
+       selected readout on a console */
+    .pm-switch {
+      display: inline-flex;
+      margin-block-end: 8px;
+      border: 1px solid var(--rule);
+    }
+    .pm-tab {
+      padding: 3px 12px;
+      border: none;
+      background: var(--bg);
+      color: var(--dim);
+      font: inherit;
+      font-size: 11px;
+      cursor: var(--cursor-hot);
+    }
+    .pm-tab + .pm-tab {
+      border-inline-start: 1px solid var(--rule);
+    }
+    .pm-tab[aria-pressed='true'] {
+      background: var(--ink);
+      color: var(--bg);
+    }
+
     /* ---- footer: one-line status ---- */
     .foot .wrap {
       display: flex;
@@ -871,6 +941,10 @@
         grid-template-columns: 1fr;
         gap: 8px;
       }
+      .setup .wrap {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+      }
       .flow {
         inline-size: auto;
         block-size: var(--flow-h);
@@ -931,6 +1005,7 @@
         ng-point
       </a>
       <nav aria-label="Page">
+        <a href="#setup">setup</a>
         <a
           href="https://github.com/abiramcodes/ng-point#readme"
           target="_blank"
@@ -961,6 +1036,10 @@
             ng-point captures the element's component, file:line, and cleaned HTML. The exact
             context your agent needs, at a fraction of the tokens of a screenshot.
           </p>
+          <div class="pm-switch" role="group" aria-label="Install with npm or pnpm">
+            <button type="button" class="pm-tab" data-pm="npm" aria-pressed="true">npm</button>
+            <button type="button" class="pm-tab" data-pm="pnpm" aria-pressed="false">pnpm</button>
+          </div>
           <div class="copyable">
             <span class="copy">
               <button
@@ -1048,6 +1127,70 @@
             <button type="button" class="anim-toggle">pause</button>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section class="setup" id="setup" aria-labelledby="setup-h">
+      <div class="wrap">
+        <h2 id="setup-h">setup</h2>
+        <ol class="steps">
+          <li>
+            <h3>install the dev dependency</h3>
+            <div class="copyable">
+              <span class="copy">
+                <button
+                  type="button"
+                  class="copy-button"
+                  command="--copy"
+                  commandfor="setup-install"
+                  aria-label="Copy install command"
+                >
+                  <svg class="icon-copy" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+                    <rect x="5.5" y="5.5" width="9" height="9" rx="0" fill="none" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M10.5 3.5h-7a1 1 0 0 0-1 1v7" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  </svg>
+                  <svg class="icon-check" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+                <span class="tip" role="status"></span>
+              </span>
+              <pre><code id="setup-install">npm i -D @abiramcodes/ng-point</code></pre>
+            </div>
+          </li>
+          <li>
+            <h3>add the provider once, in app.config.ts</h3>
+            <div class="copyable">
+              <span class="copy">
+                <button
+                  type="button"
+                  class="copy-button"
+                  command="--copy"
+                  commandfor="setup-code"
+                  aria-label="Copy the provider setup"
+                >
+                  <svg class="icon-copy" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+                    <rect x="5.5" y="5.5" width="9" height="9" rx="0" fill="none" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M10.5 3.5h-7a1 1 0 0 0-1 1v7" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  </svg>
+                  <svg class="icon-check" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+                <span class="tip" role="status"></span>
+              </span>
+              <pre><code id="setup-code">import { provideNgPoint } from '@abiramcodes/ng-point';
+
+export const appConfig: ApplicationConfig = {
+  providers: [provideRouter(routes), provideNgPoint()],
+};</code></pre>
+            </div>
+          </li>
+        </ol>
+        <p class="setup-note">
+          Start your dev server, then Alt+Click any element (macOS: option+click) — that is the
+          whole setup. Production builds never load it.
+        </p>
       </div>
     </section>
   </main>
@@ -1227,6 +1370,37 @@
         if (target) copy(button, target);
       });
     }
+
+    // ---- npm / pnpm switch: one control, every install command follows ----
+    var pmCodes = [
+      document.getElementById('install-code'),
+      document.getElementById('setup-install'),
+    ];
+    var pmCommands = {
+      npm: 'npm i -D @abiramcodes/ng-point',
+      pnpm: 'pnpm add -D @abiramcodes/ng-point',
+    };
+
+    function setPm(pm) {
+      pmCodes.forEach(function (code) {
+        if (code) code.textContent = pmCommands[pm];
+      });
+      document.querySelectorAll('.pm-tab').forEach(function (tab) {
+        tab.setAttribute('aria-pressed', tab.dataset.pm === pm ? 'true' : 'false');
+      });
+      try {
+        localStorage.setItem('pm', pm);
+      } catch (e) {}
+    }
+
+    document.querySelectorAll('.pm-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        setPm(tab.dataset.pm);
+      });
+    });
+    try {
+      if (localStorage.getItem('pm') === 'pnpm') setPm('pnpm');
+    } catch (e) {}
   </script>
 </body>
 </html>

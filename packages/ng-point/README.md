@@ -13,7 +13,11 @@ Works with Angular **21 and 22** (`@angular/core`/`@angular/common` `^21.0.0 || 
 ## Install
 
 ```bash
+# npm
 npm install -D @abiramcodes/ng-point
+
+# pnpm
+pnpm add -D @abiramcodes/ng-point
 ```
 
 ## Setup

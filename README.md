@@ -17,7 +17,11 @@ Instruction: disable this while orders are loading
 ## Install
 
 ```bash
+# npm
 npm i -D @abiramcodes/ng-point
+
+# pnpm
+pnpm add -D @abiramcodes/ng-point
 ```
 
 Installed as a **devDependency**: the provider is dev-mode-only and production builds constant-fold it away — it is never needed at runtime.
