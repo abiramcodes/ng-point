@@ -75,7 +75,7 @@ For AI agents: the landing site ships an [llms.txt](https://abiramcodes.github.i
 | --- | --- |
 | [`packages/ng-point`](./packages/ng-point) | The Angular library — published as `@abiramcodes/ng-point` |
 | `apps/demo` | Example Angular 22 app (login / orders / settings) |
-| [`SKILL.md`](./SKILL.md) | Agent skill file — everything an AI coding agent needs to set up and use ng-point |
+| [`skills/ng-point`](./skills/ng-point) | The published agent skill — installs with `npx skills add abiramcodes/ng-point` |
 | [`site/`](./site) | Landing page — live at <https://abiramcodes.github.io/ng-point/> — plus `robots.txt`, `sitemap.xml`, and `llms.txt` (the agent-facing doc index); deployed to GitHub Pages by `.github/workflows/landing.yml` |
 | `video/launch` | Launch video source in Go (mygo render plugin) — renders `video/ng-point-launch.mp4` (local-only, gitignored for now) |
 

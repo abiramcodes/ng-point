@@ -1,6 +1,8 @@
 ---
 name: mygo-render
 description: Make videos and frame sequences with the mygo render plugin (github.com/egoist/mygo/plugins/render). A Go composition builds each frame from native UI widgets, the GPU draws it, and the system encoder writes MP4, MOV, WebM, ProRes or PNG frames, with optional sound and no browser. Use this skill whenever the user asks for a launch video, promo clip, product demo video, animated captions, a changelog clip, wants UI recorded as video in Go, mentions mygo or the mygo render plugin, or asks for a short crisp video for a product.
+metadata:
+  internal: true
 ---
 
 # mygo render

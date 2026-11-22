@@ -41,7 +41,8 @@ All fields optional; these are the defaults.
 ## Agent skill
 
 ng-point ships a skill file so coding agents can set it up and drive it without
-being told how. Install it from skills.sh — the open skills registry:
+being told how. It lives in the repo's `skills/ng-point/` folder; install it from
+skills.sh — the open skills registry:
 
     npx skills add abiramcodes/ng-point
 
@@ -50,7 +51,7 @@ installs into the folder that agent scans. Without npx, fetch the file directly:
 
     mkdir -p .agents/skills/ng-point \
       && curl -fsSL \
-      https://raw.githubusercontent.com/abiramcodes/ng-point/main/SKILL.md \
+      https://raw.githubusercontent.com/abiramcodes/ng-point/main/skills/ng-point/SKILL.md \
       -o .agents/skills/ng-point/SKILL.md
 
 Claude Code reads `.claude/skills/ng-point/` instead — same command, that folder.
@@ -59,7 +60,7 @@ Claude Code reads `.claude/skills/ng-point/` instead — same command, that fold
 
 - [Landing page](https://abiramcodes.github.io/ng-point/): what it does in 30 seconds, with a live setup section.
 - [README](https://github.com/abiramcodes/ng-point#readme): full usage, keyboard shortcuts, configuration, security and redaction notes.
-- [SKILL.md](https://raw.githubusercontent.com/abiramcodes/ng-point/main/SKILL.md): agent skill file — everything an AI coding agent needs to install, configure and drive ng-point.
+- [SKILL.md](https://raw.githubusercontent.com/abiramcodes/ng-point/main/skills/ng-point/SKILL.md): agent skill file — everything an AI coding agent needs to install, configure and drive ng-point.
 - [npm package](https://www.npmjs.com/package/@abiramcodes/ng-point): installable package page.
 - [Contributing](https://github.com/abiramcodes/ng-point/blob/main/CONTRIBUTING.md): dev setup, verification bar, design language.
 - [GitHub repository](https://github.com/abiramcodes/ng-point): source, issues, releases.

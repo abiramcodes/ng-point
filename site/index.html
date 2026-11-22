@@ -1222,8 +1222,10 @@ export const appConfig: ApplicationConfig = {
           whole setup. Production builds never load it. The skill command comes from
           <a href="https://skills.sh" target="_blank" rel="noopener noreferrer">skills.sh</a>, the
           open skills registry - the CLI detects your agent (OpenCode, Claude Code, Cursor, and
-          75+ more) and installs into the folder it reads. No npx? curl the repo's SKILL.md into
-          <code>.agents/skills/ng-point/</code> or <code>.claude/skills/</code> for Claude Code.
+          75+ more) and installs into the folder it reads; only the skill folder
+          <code>skills/ng-point/</code> is ever copied. No npx? curl the repo's
+          <code>skills/ng-point/SKILL.md</code> into <code>.agents/skills/ng-point/</code> or
+          <code>.claude/skills/</code> for Claude Code.
         </p>
       </div>
     </section>

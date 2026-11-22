@@ -5,6 +5,7 @@ license: MIT
 metadata:
   author: Copyright 2026 Google LLC
   version: '1.0'
+  internal: true
 ---
 
 # Angular Developer Guidelines
