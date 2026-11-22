@@ -12,7 +12,7 @@ Hosted docs & landing: <https://abiramcodes.github.io/ng-point/>
 ## Install
 
 ```bash
-npm install -D ng-point
+npm install -D @abiramcodes/ng-point
 ```
 
 DevDependency — the provider is constant-folded out of production builds.
@@ -21,7 +21,7 @@ DevDependency — the provider is constant-folded out of production builds.
 
 ```ts
 // app.config.ts
-import { provideNgPoint } from 'ng-point';
+import { provideNgPoint } from '@abiramcodes/ng-point';
 
 export const appConfig: ApplicationConfig = {
   providers: [provideRouter(routes), provideNgPoint()],
@@ -83,7 +83,7 @@ All fields are optional; the values above are the defaults.
 ## Opt out per element
 
 ```ts
-import { NgPointIgnoreDirective } from 'ng-point';
+import { NgPointIgnoreDirective } from '@abiramcodes/ng-point';
 
 @Component({
   imports: [NgPointIgnoreDirective],

@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NgPointIgnoreDirective, provideNgPoint } from 'ng-point';
+import { NgPointIgnoreDirective, provideNgPoint } from '@abiramcodes/ng-point';
 
 @Component({
   selector: 'app-host',

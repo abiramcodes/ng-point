@@ -17,7 +17,7 @@ Instruction: disable this while orders are loading
 ## Install
 
 ```bash
-npm i -D ng-point
+npm i -D @abiramcodes/ng-point
 ```
 
 Installed as a **devDependency**: the provider is dev-mode-only and production builds constant-fold it away — it is never needed at runtime.
@@ -27,7 +27,7 @@ Installed as a **devDependency**: the provider is dev-mode-only and production b
 1. Add the provider once, in `app.config.ts`:
 
 ```ts
-import { provideNgPoint } from 'ng-point';
+import { provideNgPoint } from '@abiramcodes/ng-point';
 
 export const appConfig: ApplicationConfig = {
   providers: [provideRouter(routes), provideNgPoint()],
@@ -60,7 +60,7 @@ export const appConfig: ApplicationConfig = {
 
 | | What it is |
 | --- | --- |
-| [`packages/ng-point`](./packages/ng-point) | The Angular library — published as `ng-point` |
+| [`packages/ng-point`](./packages/ng-point) | The Angular library — published as `@abiramcodes/ng-point` |
 | `apps/demo` | Example Angular 22 app (login / orders / settings) |
 | [`SKILL.md`](./SKILL.md) | Agent skill file — everything an AI coding agent needs to set up and use ng-point |
 | [`site/`](./site) | Landing page — live at <https://abiramcodes.github.io/ng-point/> — deployed to GitHub Pages by `.github/workflows/landing.yml` |

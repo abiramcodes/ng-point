@@ -5,7 +5,7 @@
   "compilerOptions": {
     "types": [],
     "paths": {
-      "ng-point": ["../../packages/ng-point/src/public-api.ts"]
+      "@abiramcodes/ng-point": ["../../packages/ng-point/src/public-api.ts"]
     }
   },
   "include": ["src/**/*.ts"],

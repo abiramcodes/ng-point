@@ -165,7 +165,7 @@ HTML = """<!doctype html>
       <h1 class="headline">One Alt+Click.<br />Your agent is already on it.</h1>
       <div class="installwrap">
         <i class="brk tl"></i><i class="brk tr"></i><i class="brk bl"></i><i class="brk br"></i>
-        <div class="install"><span class="dollar">$</span>npm install -D <span class="pkg">ng-point</span></div>
+        <div class="install"><span class="dollar">$</span>npm install -D <span class="pkg">@abiramcodes/ng-point</span></div>
       </div>
     </div>
 

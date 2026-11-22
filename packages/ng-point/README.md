@@ -13,14 +13,14 @@ Works with Angular **21 and 22** (`@angular/core`/`@angular/common` `^21.0.0 || 
 ## Install
 
 ```bash
-npm install -D ng-point
+npm install -D @abiramcodes/ng-point
 ```
 
 ## Setup
 
 ```ts
 // app.config.ts
-import { provideNgPoint } from 'ng-point';
+import { provideNgPoint } from '@abiramcodes/ng-point';
 
 export const appConfig: ApplicationConfig = {
   providers: [provideRouter(routes), provideNgPoint()],
@@ -156,7 +156,7 @@ Kill-switch: set `localStorage.ngPointDisabled = '1'` at runtime to disable pick
 Mark any element — and its whole subtree — as off-limits to ng-point picks:
 
 ```ts
-import { NgPointIgnoreDirective } from 'ng-point';
+import { NgPointIgnoreDirective } from '@abiramcodes/ng-point';
 
 @Component({
   imports: [NgPointIgnoreDirective],

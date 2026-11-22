@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NgPointIgnoreDirective } from 'ng-point';
+import { NgPointIgnoreDirective } from '@abiramcodes/ng-point';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
