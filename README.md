@@ -24,6 +24,8 @@ npm i -D @abiramcodes/ng-point
 pnpm add -D @abiramcodes/ng-point
 ```
 
+[![skills.sh](https://skills.sh/b/abiramcodes/ng-point)](https://skills.sh/abiramcodes/ng-point)
+
 Installed as a **devDependency**: the provider is dev-mode-only and production builds constant-fold it away — it is never needed at runtime.
 
 ## Setup
@@ -58,6 +60,7 @@ export const appConfig: ApplicationConfig = {
 ## Learn more
 
 - **Docs & landing: <https://abiramcodes.github.io/ng-point/>** — hosted on GitHub Pages.
+- **Agent skill:** `npx skills add abiramcodes/ng-point` — listed on [skills.sh](https://skills.sh/abiramcodes/ng-point); your agent learns to install, configure, and drive ng-point on its own.
 - [`packages/ng-point/README.md`](./packages/ng-point) — full usage, keyboard shortcuts, configuration, security and redaction notes, and module federation behavior.
 
 ## Contributing

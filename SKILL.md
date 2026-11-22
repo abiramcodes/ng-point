@@ -1,3 +1,8 @@
+---
+name: ng-point
+description: Set up and use ng-point in an Angular app — the dev-mode provider that turns Alt+Click into LLM-ready context blocks (component, file:line, cleaned HTML) for AI coding agents. Load this skill when installing or configuring @abiramcodes/ng-point, using its pick/add/retarget keyboard flow or ngPointIgnore, or troubleshooting the overlay in a running dev app.
+---
+
 # ng-point — agent skill
 
 Dev-mode-only Angular package: Alt+Click any element in your running app to capture an

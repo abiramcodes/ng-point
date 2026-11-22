@@ -761,6 +761,9 @@
       color: var(--dim);
       font-size: 13px;
       line-height: 1.6;
+      /* the wrap is a grid; without this the note auto-places into the
+         180px label column instead of the content column */
+      grid-column: 2;
     }
 
     /* npm / pnpm segmented control: the active manager inverts, like a
@@ -944,6 +947,9 @@
       .setup .wrap {
         grid-template-columns: minmax(0, 1fr);
         gap: 12px;
+      }
+      .setup-note {
+        grid-column: auto;
       }
       .flow {
         inline-size: auto;
@@ -1186,10 +1192,38 @@ export const appConfig: ApplicationConfig = {
 };</code></pre>
             </div>
           </li>
+          <li>
+            <h3>teach your agent (optional) — install the skill</h3>
+            <div class="copyable">
+              <span class="copy">
+                <button
+                  type="button"
+                  class="copy-button"
+                  command="--copy"
+                  commandfor="skill-install"
+                  aria-label="Copy the agent skill install command"
+                >
+                  <svg class="icon-copy" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+                    <rect x="5.5" y="5.5" width="9" height="9" rx="0" fill="none" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M10.5 3.5h-7a1 1 0 0 0-1 1v7" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  </svg>
+                  <svg class="icon-check" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+                <span class="tip" role="status"></span>
+              </span>
+              <pre><code id="skill-install">npx skills add abiramcodes/ng-point</code></pre>
+            </div>
+          </li>
         </ol>
         <p class="setup-note">
-          Start your dev server, then Alt+Click any element (macOS: option+click) — that is the
-          whole setup. Production builds never load it.
+          Start your dev server, then Alt+Click any element (macOS: option+click) - that is the
+          whole setup. Production builds never load it. The skill command comes from
+          <a href="https://skills.sh" target="_blank" rel="noopener noreferrer">skills.sh</a>, the
+          open skills registry - the CLI detects your agent (OpenCode, Claude Code, Cursor, and
+          75+ more) and installs into the folder it reads. No npx? curl the repo's SKILL.md into
+          <code>.agents/skills/ng-point/</code> or <code>.claude/skills/</code> for Claude Code.
         </p>
       </div>
     </section>
