@@ -68,6 +68,29 @@ describe('NgPointOverlayComponent', () => {
     expect(dialog.hasAttribute('open')).toBe(false);
   });
 
+  it('labels the pick modifier Alt on non-Apple platforms', async () => {
+    const el = await createFixture();
+    const hint = el.querySelector<HTMLElement>('.ng-point-hint')!;
+    expect(hint.textContent).toContain('Alt+Click an element');
+    expect(hint.textContent).toContain('Alt+↑/↓ retarget');
+    const empty = el.querySelector<HTMLElement>('.ng-point-empty')!;
+    expect(empty.textContent).toContain('Alt+Click an element');
+  });
+
+  it('labels the pick modifier Option on Apple platforms', async () => {
+    vi.stubGlobal('navigator', {
+      clipboard: { writeText: clipboardWriteText },
+      platform: 'MacIntel',
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+    });
+    const el = await createFixture();
+    const hint = el.querySelector<HTMLElement>('.ng-point-hint')!;
+    expect(hint.textContent).toContain('Option+Click an element');
+    expect(hint.textContent).toContain('Option+↑/↓ retarget');
+    const empty = el.querySelector<HTMLElement>('.ng-point-empty')!;
+    expect(empty.textContent).toContain('Option+Click an element');
+  });
+
   it('renders the card context fields once opened', async () => {
     const el = await createFixture();
     session.openWith(context('SubmitButtonComponent'), document.createElement('button'), 40, 40);

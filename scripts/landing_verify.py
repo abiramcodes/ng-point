@@ -109,8 +109,8 @@ with sync_playwright() as p:
     print("--- system dark (1440) ---")
     print(f"body bg: {dk.evaluate('getComputedStyle(document.body).backgroundColor')}, "
           f"toggle shows: {dk.locator('.theme-toggle').inner_text().strip()!r}")
-    assert dk.locator(".theme-toggle").inner_text().strip() == "Light", (
-        "dark page must offer to switch to Light"
+    assert dk.locator(".theme-toggle").inner_text().strip() == "light", (
+        "dark page must offer to switch to light"
     )
     dk.screenshot(path=str(OUT / "landing-hero-1440-dark.png"))
     dk.close()
@@ -118,18 +118,26 @@ with sync_playwright() as p:
     # 4. Toggle: pin dark under light system, reload keeps it, toggle back unpins.
     META_JS = "document.querySelector('meta[name=color-scheme]').content"
     BG_JS = "getComputedStyle(document.body).backgroundColor"
+    SWITCH_JS = "() => document.documentElement.classList.contains('theme-switch')"
     tg = new_page(browser, scheme="light")
     tg.goto(URL, wait_until="networkidle")
     tg.wait_for_timeout(600)
     print("--- theme toggle (system light) ---")
-    assert tg.locator(".theme-toggle").inner_text().strip() == "Dark", (
-        "light page must offer to switch to Dark"
+    assert tg.locator(".theme-toggle").inner_text().strip() == "dark", (
+        "light page must offer to switch to dark"
     )
     tg.click(".theme-toggle")
-    tg.wait_for_timeout(200)
-    print(f"pinned dark: meta={tg.evaluate(META_JS)!r}, bg={tg.evaluate(BG_JS)}, "
-          f"label={tg.locator('.theme-toggle').inner_text().strip()!r}")
-    assert tg.locator(".theme-toggle").inner_text().strip() == "Light"
+    tg.wait_for_timeout(60)
+    print(
+        f"pinned dark: meta={tg.evaluate(META_JS)!r}, bg={tg.evaluate(BG_JS)}, "
+        f"label={tg.locator('.theme-toggle').inner_text().strip()!r}, "
+        f"crossfade active={tg.evaluate(SWITCH_JS)}"
+    )
+    assert tg.locator(".theme-toggle").inner_text().strip() == "light"
+    tg.wait_for_timeout(600)
+    assert not tg.evaluate(SWITCH_JS), (
+        "theme-switch class must be removed after the transition settles"
+    )
     tg.reload(wait_until="networkidle")
     tg.wait_for_timeout(400)
     print(f"after reload: meta={tg.evaluate(META_JS)!r}, bg={tg.evaluate(BG_JS)}")
@@ -137,7 +145,7 @@ with sync_playwright() as p:
     tg.wait_for_timeout(200)
     print(f"unpinned: meta={tg.evaluate(META_JS)!r}, bg={tg.evaluate(BG_JS)}, "
           f"label={tg.locator('.theme-toggle').inner_text().strip()!r}")
-    assert tg.locator(".theme-toggle").inner_text().strip() == "Dark"
+    assert tg.locator(".theme-toggle").inner_text().strip() == "dark"
     tg.close()
 
     # 5. Mobile dark: overflow + geometry.

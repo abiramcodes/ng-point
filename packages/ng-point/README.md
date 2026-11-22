@@ -25,7 +25,7 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-That's it. In `ng serve` (development), Alt+Click any element. In production builds the provider's initializer returns immediately — no listeners, no overlay, nothing.
+That's it. In `ng serve` (development), Alt+Click any element (macOS: Option+Click — the same key, labeled ⌥). In production builds the provider's initializer returns immediately — no listeners, no overlay, nothing.
 
 ### Optional: exact template `file:line` (`Template:` line) — Angular 22.1.4+ only
 
@@ -83,15 +83,22 @@ Install and `provideNgPoint()` are identical on every supported version. The onl
 
 | Action | Effect |
 | --- | --- |
-| `Alt+Click` | Open the panel with selection #1 (while open: re-pick/replace the **active** selection) |
-| `Alt+Shift+Click` (panel open) | **Add** another element — each selection is its own full context block with its own instruction (up to 5 per session) |
-| `Alt+↑` / `Alt+↓` | Re-target the active selection to the parent / first-child element |
+| `Alt+Click` (macOS: `Option+Click`) | Open the panel with selection #1 (while open: re-pick/replace the **active** selection) |
+| `Alt+Shift+Click` (panel open) (macOS: `Option+Shift+Click`) | **Add** another element — each selection is its own full context block with its own instruction (up to 5 per session) |
+| `Alt+↑` / `Alt+↓` (macOS: `Option+↑/↓`) | Re-target the active selection to the parent / first-child element |
 | Click a card | Make it the active selection (arrows / re-pick act on it) |
 | Card `✕` | Remove that selection |
 | `Enter` | Copy **all** blocks (joined by `---`), queue each as its own entry, close |
-| `Ctrl+Enter` or per-card `copy` | Copy one block without queueing |
+| `Ctrl+Enter` (macOS: `⌘+Enter`) or per-card `copy` | Copy one block without queueing |
 | `Shift+Enter` | Newline in the instruction (collapsed in the output) |
 | `Escape` | Close without queueing |
+
+**macOS vs Windows/Linux — same gesture, different keycap.** The pick modifier is the key
+labeled **option ⌥** on Apple keyboards and **Alt** everywhere else. Both set the same
+`altKey` event property, so every interaction above behaves identically on all platforms;
+the panel's status line prints the label yours uses (`Option+Click` on a Mac, `Alt+Click`
+elsewhere). The `activationModifier: 'ctrl-shift'` mode is identical everywhere too — its
+add-click reads `Ctrl+Shift+Option+Click` on a Mac.
 
 The block preview in the panel is **editable** — what's in the textarea is exactly what gets copied and queued. On Enter the final text is re-scanned for secret shapes and a warn-only `possible secret` badge appears if one is detected.
 
@@ -146,8 +153,18 @@ Kill-switch: set `localStorage.ngPointDisabled = '1'` at runtime to disable pick
 
 Mark any element — and its whole subtree — as off-limits to ng-point picks:
 
+```ts
+import { NgPointIgnoreDirective } from 'ng-point';
+
+@Component({
+  imports: [NgPointIgnoreDirective],
+  template: `<div ngPointIgnore>Alt+Click inside me does nothing.</div>`,
+})
+```
+
+Or conditionally:
+
 ```html
-<div ngPointIgnore>Alt+Click inside me does nothing.</div>
 <section [ngPointIgnore]="isThirdPartyPanel">Conditional opt-out.</section>
 ```
 

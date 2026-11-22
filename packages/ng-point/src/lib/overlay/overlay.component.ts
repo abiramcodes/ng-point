@@ -14,6 +14,7 @@ import {
 import { copyText } from '../clipboard';
 import { NG_POINT_CONFIG } from '../config';
 import { assembleBlocks } from '../format';
+import { isMacPlatform } from '../platform';
 import type { NgPointQueueEntry } from '../types';
 import { NG_POINT_SESSION } from './tokens';
 import type { SelectionCard } from './session';
@@ -604,14 +605,21 @@ export class NgPointOverlayComponent implements OnDestroy {
     globalThis.removeEventListener('resize', this.resizeListener);
   }
 
+  /**
+   * Keycap label for the pick modifier: "option" on Apple keyboards, "Alt"
+   * elsewhere. Purely cosmetic — the listened-for event property is `altKey`
+   * on every platform.
+   */
+  private readonly altLabel = isMacPlatform() ? 'Option' : 'Alt';
+
   protected pickHint(): string {
     return this.config.activationModifier === 'alt'
-      ? 'Alt+Click an element (Alt+Shift+Click to add more)'
-      : 'Ctrl+Shift+Click an element (Ctrl+Shift+Alt+Click to add more)';
+      ? `${this.altLabel}+Click an element (${this.altLabel}+Shift+Click to add more)`
+      : `Ctrl+Shift+Click an element (Ctrl+Shift+${this.altLabel}+Click to add more)`;
   }
 
   protected hint(): string {
-    return `${this.pickHint()} · Alt+↑/↓ retarget · Enter copies & queues · Esc discards`;
+    return `${this.pickHint()} · ${this.altLabel}+↑/↓ retarget · Enter copies & queues · Esc discards`;
   }
 
   /** Header drag: pointer-captured moves update the panel position, clamped. */

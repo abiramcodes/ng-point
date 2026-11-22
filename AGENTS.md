@@ -4,6 +4,13 @@ Notes for AI coding agents working in this repository.
 
 ## Skills to consult
 
+### ng-point setup and usage
+
+The package's public skill file is **[`SKILL.md`](./SKILL.md)** at the repo root — it covers
+install, `provideNgPoint()`, all configuration options, `ngPointIgnore`, keyboard shortcuts,
+the block format, version compatibility, and the dev-only mechanism. Load it whenever you need
+to add, configure, or use ng-point in an Angular app.
+
 ### Angular-related changes
 
 Apps (`apps/demo`), the library (`packages/ng-point`), `angular.json`, tsconfigs, and all
