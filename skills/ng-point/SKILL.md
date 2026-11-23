@@ -124,19 +124,18 @@ localStorage.ngPointDisabled = '1';  // disables picking without a rebuild
 
 ## Template `file:line` (Angular 22.1.4+ only)
 
-Create a dev-only tsconfig:
+Enable it in the existing `tsconfig.base.json` (or `tsconfig.app.json`) —
+no separate dev tsconfig needed:
 
 ```json
-// tsconfig.app.dev.json
+// tsconfig.base.json (or tsconfig.app.json)
 {
-  "extends": "./tsconfig.app.json",
   "angularCompilerOptions": {
     "enableTemplateSourceLocations": true
   }
 }
 ```
 
-Reference it only from the `development` configuration in `angular.json`.
 On Angular 21 or 22.0-22.1.3, the `Template:` line is simply omitted.
 
 ## Module federation
@@ -147,5 +146,12 @@ Share `ng-point` as a singleton too: one copy, one config source, one panel.
 
 ## Version compatibility
 
-Angular 21 and 22. Zone-based or zoneless. No zone APIs used.
-The only version-dependent feature is the `Template:` line (22.1.4+).
+Works with Angular **21 and 22** (`@angular/core`/`@angular/common` `^21.0.0 || ^22.0.0`).
+Install and `provideNgPoint()` are identical on every supported version. The only differences:
+
+| | Angular 21.x | Angular 22.0–22.1.3 | Angular 22.1.4+ |
+| --- | --- | --- | --- |
+| `Component:` / `File:` lines (compiler `debugInfo`) | ✔ | ✔ | ✔ |
+| `Template:` line | — (line omitted) | — (line omitted) | ✔ with the tsconfig option above |
+| `enableTemplateSourceLocations` in tsconfig | Silently ignored — safe to leave in | Silently ignored — safe to leave in | Required for `Template:` |
+| Change detection | Zone or zoneless — inherited from your app | Same | Same |

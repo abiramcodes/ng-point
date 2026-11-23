@@ -265,6 +265,14 @@ pnpm check:prod     # verify ng-point never leaks into initial prod bundles
 
 The workspace develops on Angular 22; Angular 21 support is verified by the `angular21` CI job (`.github/workflows/ci.yml`), which swaps the workspace to the Angular 21 toolchain via `scripts/ci-angular21.mjs` and runs the full build/test suite. Release builds of the package should be produced with the Angular 21 toolchain (the oldest supported major), so the published APF output is consumable by both 21 and 22 apps.
 
+## Contributors
+
+<a href="https://github.com/abiramcodes"><img src="https://github.com/abiramcodes.png?size=80" width="80" height="80" alt="abiramcodes" /></a>
+
+**[@abiramcodes](https://github.com/abiramcodes)** — creator, contributor & maintainer
+
+Want to join this list? See [CONTRIBUTING.md](./CONTRIBUTING.md) — PRs welcome. Full history: [contributors graph](https://github.com/abiramcodes/ng-point/graphs/contributors).
+
 ## License
 
 MIT — see [`LICENSE`](./LICENSE).
