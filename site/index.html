@@ -790,6 +790,223 @@
       color: var(--bg);
     }
 
+    /* ---- Alt+Click preview: the package's real overlay, as a demo ----
+       Same construction as the shipped panel: non-modal <dialog> + .show(),
+       hard corners, ghost actions, borderless inset fields, the ❮ mark and
+       the brand accent on the active card. Panel colors are the package's
+       palette, mapped through light-dark() so the preview follows the
+       page's chosen scheme. */
+    .alt-click {
+      font: inherit;
+      color: inherit;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: var(--cursor-hot);
+      text-decoration: underline dotted var(--pick);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 8px;
+    }
+    .alt-click:hover {
+      text-decoration-style: solid;
+    }
+    .alt-click:focus-visible {
+      outline: 2px solid var(--pick);
+      outline-offset: 5px;
+    }
+
+    .demo-panel {
+      --pnl-bg: light-dark(#ffffff, #14141b);
+      --pnl-surface: light-dark(#f2f2f6, #1d1d27);
+      --pnl-inset: light-dark(#e9e9ef, #0e0e15);
+      --pnl-text: light-dark(#1c1c24, #e9e9f2);
+      --pnl-muted: light-dark(#6a6a7e, #8f8fa3);
+      --pnl-border: light-dark(#d8d8e2, #2c2c3a);
+      --pnl-accent: #d40f62;
+
+      position: fixed;
+      inset: auto;
+      margin: 0;
+      padding: 12px;
+      inline-size: min(440px, calc(100vw - 24px));
+      max-block-size: calc(100vh - 16px);
+      background: var(--pnl-bg);
+      color: var(--pnl-text);
+      border: 1px solid var(--pnl-border);
+      box-shadow: 0 16px 48px rgb(0 0 0 / 50%);
+      font: 12.5px/1.5 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      overscroll-behavior: contain;
+      transition: opacity 0.14s ease-out, translate 0.14s ease-out;
+    }
+    .demo-panel[open] {
+      display: flex;
+      opacity: 1;
+
+      @starting-style {
+        opacity: 0;
+      }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .demo-panel[open] {
+        translate: 0 0;
+
+        @starting-style {
+          translate: 0 6px;
+        }
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .demo-panel {
+        transition-duration: 0.05s;
+      }
+    }
+
+    .demo-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      cursor: grab;
+      touch-action: none;
+    }
+    .demo-dragging,
+    .demo-dragging * {
+      cursor: grabbing;
+      user-select: none;
+    }
+    .demo-title {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+    .demo-mark {
+      margin-inline-end: 2px;
+      color: var(--pnl-accent);
+    }
+    .demo-hint {
+      margin: 3px 0 0;
+      color: var(--pnl-muted);
+      font-size: 10.5px;
+      line-height: 1.45;
+    }
+    .demo-tag {
+      margin-inline-start: auto;
+      padding: 2px 6px;
+      border: 1px solid var(--pnl-border);
+      color: var(--pnl-muted);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+    .demo-act {
+      min-block-size: 22px;
+      min-inline-size: 22px;
+      padding: 1px 7px;
+      border: none;
+      background: transparent;
+      color: var(--pnl-muted);
+      font: inherit;
+      font-size: 10.5px;
+      cursor: var(--cursor-hot);
+    }
+    .demo-act:hover {
+      background: var(--pnl-bg);
+      color: var(--pnl-text);
+    }
+    .demo-card {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px;
+      border: 1px solid var(--pnl-accent);
+      background: var(--pnl-surface);
+    }
+    .demo-card-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .demo-name {
+      font-weight: 600;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .demo-actions {
+      margin-inline-start: auto;
+      display: flex;
+      gap: 2px;
+    }
+    .demo-file {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--pnl-muted);
+      font-size: 10.5px;
+    }
+    .demo-label {
+      margin-block-start: 2px;
+      color: var(--pnl-muted);
+      font-size: 10.5px;
+    }
+    .demo-block,
+    .demo-instr {
+      inline-size: 100%;
+      padding: 6px 8px;
+      border: none;
+      background: var(--pnl-inset);
+      color: var(--pnl-text);
+      font: inherit;
+    }
+    .demo-block {
+      resize: vertical;
+      white-space: pre;
+      min-block-size: 118px;
+    }
+    .demo-empty {
+      display: none;
+      margin: 6px 0 0;
+      padding-block: 6px 2px;
+      color: var(--pnl-muted);
+    }
+    .demo-panel[data-empty] .demo-card {
+      display: none;
+    }
+    .demo-panel[data-empty] .demo-empty {
+      display: block;
+    }
+    .demo-foot {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .demo-commit {
+      min-block-size: 28px;
+      padding: 4px 14px;
+      border: 1px solid var(--pnl-accent);
+      background: var(--pnl-accent);
+      color: #ffffff;
+      font: inherit;
+      font-weight: 600;
+      cursor: var(--cursor-hot);
+    }
+    .demo-commit:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .demo-status {
+      flex: 1 1 160px;
+      margin: 0;
+      color: var(--pnl-muted);
+      font-size: 11px;
+      min-height: 18px;
+    }
+
     /* ---- footer: one-line status ---- */
     .foot .wrap {
       display: flex;
@@ -975,7 +1192,10 @@
       .pane,
       .block-card,
       .copyable pre,
-      .app-card {
+      .app-card,
+      .demo-panel,
+      .demo-card,
+      .demo-tag {
         border: 1px solid CanvasText;
       }
       .pick-anchor::after {
@@ -1037,7 +1257,10 @@
     <section class="hero" aria-labelledby="hero-h">
       <div class="wrap">
         <div class="hero-copy">
-          <h1 id="hero-h">One Alt+Click.<br />Your agent is already on it.</h1>
+          <h1 id="hero-h">
+            One <button type="button" class="alt-click" id="alt-demo">Alt+Click</button>.<br />
+            Your agent is already on it.
+          </h1>
           <p class="lede">
             ng-point captures the element's component, file:line, and cleaned HTML. The exact
             context your agent needs, at a fraction of the tokens of a screenshot.
@@ -1069,6 +1292,7 @@
           </div>
           <p class="pick-note">
             Up to 5 elements in one session, copied together with one Enter. Angular 21-22.
+            Click the underlined Alt+Click for a live example panel.
           </p>
         </div>
 
@@ -1285,6 +1509,55 @@ export const appConfig: ApplicationConfig = {
     </div>
   </footer>
 
+  <dialog class="demo-panel" id="demo-panel" aria-labelledby="demo-title">
+    <header class="demo-head" id="demo-drag">
+      <div>
+        <h3 class="demo-title" id="demo-title">
+          <span class="demo-mark" aria-hidden="true">❮</span>ng-point
+        </h3>
+        <p class="demo-hint">Alt+click pick · Alt+shift+click add · enter copy · esc</p>
+      </div>
+      <span class="demo-tag">example preview</span>
+      <button type="button" class="demo-act" id="demo-close" aria-label="Close the example preview">
+        ✕
+      </button>
+    </header>
+
+    <p class="demo-empty">Nothing selected — Alt+Click another element.</p>
+
+    <article class="demo-card" id="demo-card">
+      <header class="demo-card-head">
+        <span class="demo-name" id="demo-name">SubmitButton</span>
+        <span class="demo-actions">
+          <button type="button" class="demo-act" id="demo-up" aria-label="Retarget to the parent element">↑</button>
+          <button type="button" class="demo-act" id="demo-down" aria-label="Retarget to the first child element">↓</button>
+          <button type="button" class="demo-act" id="demo-copy" aria-label="Copy this context block only, without queueing">copy</button>
+          <button type="button" class="demo-act" id="demo-remove" aria-label="Remove this selection">✕</button>
+        </span>
+      </header>
+      <div class="demo-meta">
+        <span class="demo-file" id="demo-file">orders/submit-button.ts:19</span>
+      </div>
+      <label class="demo-label" for="demo-block">context block</label>
+      <textarea class="demo-block" id="demo-block" spellcheck="false"></textarea>
+      <label class="demo-label" for="demo-instr">instruction (optional)</label>
+      <input
+        class="demo-instr"
+        id="demo-instr"
+        type="text"
+        value="disable while loading"
+        autocomplete="off"
+      />
+    </article>
+
+    <footer class="demo-foot">
+      <button type="button" class="demo-commit" id="demo-commit">Copy and queue (Enter)</button>
+      <p class="demo-status" role="status" id="demo-status">
+        This is an example — the real panel opens in your dev app.
+      </p>
+    </footer>
+  </dialog>
+
   <script>
     // ---- theme toggle ----
     var schemeMeta = document.querySelector('meta[name="color-scheme"]');
@@ -1437,6 +1710,175 @@ export const appConfig: ApplicationConfig = {
     try {
       if (localStorage.getItem('pm') === 'pnpm') setPm('pnpm');
     } catch (e) {}
+
+    // ---- Alt+Click demo panel: the shipped overlay, as a preview ----
+    var demoPanel = document.getElementById('demo-panel');
+    var demoBtn = document.getElementById('alt-demo');
+    var demoStatus = document.getElementById('demo-status');
+    var demoCommit = document.getElementById('demo-commit');
+    var demoBlock = document.getElementById('demo-block');
+
+    var demoContexts = {
+      submit: {
+        name: 'SubmitButton',
+        file: 'orders/submit-button.ts:19',
+        block: [
+          'Component: SubmitButton',
+          'File: orders/submit-button.ts:19',
+          'Template: orders/submit-button.ts:16',
+          'Element: <button class="btn btn-primary">Approve selected</button>',
+          'Directives: RouterLink',
+          'Parent: OrdersPage (src/app/pages/orders-page.ts:110)',
+          'Instruction: disable while loading',
+        ].join('\n'),
+      },
+      parent: {
+        name: 'OrdersPage',
+        file: 'src/app/pages/orders-page.ts:110',
+        block: [
+          'Component: OrdersPage',
+          'File: src/app/pages/orders-page.ts:110',
+          'Element: <app-orders class="page">…</app-orders>',
+          'Parent: AppComponent (src/app/app.ts:14)',
+          'Instruction: disable while loading',
+        ].join('\n'),
+      },
+    };
+
+    function demoApply(ctx) {
+      document.getElementById('demo-name').textContent = ctx.name;
+      document.getElementById('demo-file').textContent = ctx.file;
+      demoBlock.value = ctx.block;
+    }
+
+    function demoReset() {
+      demoPanel.removeAttribute('data-empty');
+      demoCommit.disabled = false;
+      demoApply(demoContexts.submit);
+      demoStatus.textContent = 'This is an example — the real panel opens in your dev app.';
+    }
+
+    function demoOpen() {
+      if (demoPanel.open) {
+        demoPanel.close();
+        return;
+      }
+      demoReset();
+      demoPanel.show();
+      // Position like the real panel: near the picked element, clamped so the
+      // whole panel stays on screen.
+      var r = demoBtn.getBoundingClientRect();
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+      var w = demoPanel.offsetWidth;
+      var h = demoPanel.offsetHeight;
+      demoPanel.style.left = Math.min(Math.max(r.left, 8), Math.max(8, vw - w - 8)) + 'px';
+      demoPanel.style.top = Math.min(Math.max(r.bottom + 18, 8), Math.max(8, vh - h - 8)) + 'px';
+      // Like the real panel: focus lands in the instruction input.
+      document.getElementById('demo-instr').focus();
+    }
+
+    demoBtn.addEventListener('click', demoOpen);
+    document.getElementById('demo-close').addEventListener('click', function () {
+      demoPanel.close();
+    });
+
+    // Non-modal dialogs don't get the native Esc close request — the shipped
+    // panel listens for Escape on document (init.ts); the demo matches it.
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && demoPanel.open) {
+        demoPanel.close();
+      }
+    });
+
+    // Header drag, clamped to the viewport — the real panel's drag behavior.
+    (function () {
+      var head = document.getElementById('demo-drag');
+      head.addEventListener('pointerdown', function (event) {
+        if (!demoPanel.open || event.target.closest('button')) return;
+        event.preventDefault();
+        var startX = event.clientX;
+        var startY = event.clientY;
+        var originX = demoPanel.offsetLeft;
+        var originY = demoPanel.offsetTop;
+        try {
+          head.setPointerCapture(event.pointerId);
+        } catch (e) {}
+        demoPanel.classList.add('demo-dragging');
+        function move(e) {
+          var w = demoPanel.offsetWidth;
+          var h = demoPanel.offsetHeight;
+          var x = Math.min(Math.max(originX + e.clientX - startX, 0), Math.max(0, window.innerWidth - w));
+          var y = Math.min(Math.max(originY + e.clientY - startY, 0), Math.max(0, window.innerHeight - h));
+          demoPanel.style.left = x + 'px';
+          demoPanel.style.top = y + 'px';
+        }
+        function stop(e) {
+          head.removeEventListener('pointermove', move);
+          head.removeEventListener('pointerup', stop);
+          head.removeEventListener('pointercancel', stop);
+          try {
+            head.releasePointerCapture(e.pointerId);
+          } catch (e2) {}
+          demoPanel.classList.remove('demo-dragging');
+        }
+        head.addEventListener('pointermove', move);
+        head.addEventListener('pointerup', stop);
+        head.addEventListener('pointercancel', stop);
+      });
+    })();
+
+    // Retargeting: swap between the picked element and its parent.
+    document.getElementById('demo-up').addEventListener('click', function () {
+      demoApply(demoContexts.parent);
+      demoStatus.textContent = 'Retargeted to the parent element.';
+    });
+    document.getElementById('demo-down').addEventListener('click', function () {
+      demoApply(demoContexts.submit);
+      demoStatus.textContent = 'Retargeted to the first child element.';
+    });
+
+    document.getElementById('demo-remove').addEventListener('click', function () {
+      demoPanel.setAttribute('data-empty', '');
+      demoCommit.disabled = true;
+      demoStatus.textContent = 'Selection removed.';
+    });
+
+    async function demoCopyBlock(message) {
+      var ok = false;
+      try {
+        await navigator.clipboard.writeText(demoBlock.value);
+        ok = true;
+      } catch (err) {
+        try {
+          if (legacyCopy(demoBlock.value)) ok = true;
+        } catch (e2) {}
+      }
+      demoStatus.textContent = ok ? message : 'Copy failed.';
+      return ok;
+    }
+
+    document.getElementById('demo-copy').addEventListener('click', function () {
+      demoCopyBlock('Copied the block (not queued in this example).');
+    });
+
+    async function demoCommitAll() {
+      if (demoPanel.hasAttribute('data-empty')) return;
+      var ok = await demoCopyBlock('Copied 1 context and queued it — example only.');
+      if (ok) {
+        setTimeout(function () {
+          demoPanel.close();
+        }, 900);
+      }
+    }
+
+    demoCommit.addEventListener('click', demoCommitAll);
+    document.getElementById('demo-instr').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        demoCommitAll();
+      }
+    });
   </script>
 </body>
 </html>
