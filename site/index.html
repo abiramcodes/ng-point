@@ -159,6 +159,10 @@
       box-sizing: border-box;
       border-radius: 0;
     }
+    html {
+      /* anchor jumps land below the sticky header (52px bar + rule + air) */
+      scroll-padding-top: 64px;
+    }
     body {
       margin: 0;
       background: var(--bg);
@@ -221,9 +225,24 @@
       padding-inline: clamp(16px, 4vw, 48px);
     }
 
-    /* ---- status bar (header) ---- */
+    /* ---- status bar (header): sticks on scroll so section nav stays
+       in reach; translucent + blur keeps the coordinate grid visible
+       through it, frosted, instead of a solid slab ---- */
     .top {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 90;
       border-block-end: 1px solid var(--rule);
+      background: var(--bg);
+    }
+    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+      .top {
+        /* if color-mix is unsupported this declaration drops and the
+           solid var(--bg) above remains (blur over opaque = no-op) */
+        background: color-mix(in srgb, var(--bg) 72%, transparent);
+        -webkit-backdrop-filter: blur(12px) saturate(1.5);
+        backdrop-filter: blur(12px) saturate(1.5);
+      }
     }
     .top .wrap {
       display: flex;
@@ -717,6 +736,70 @@
       color: var(--pick);
     }
 
+    /* ---- changelog: latest releases, mirrored from CHANGELOG.md ---- */
+    .changes {
+      border-block-start: 1px solid var(--rule);
+    }
+    .changes .wrap {
+      padding-block: 40px 48px;
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: 24px;
+    }
+    .changes h2 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .release {
+      padding-block: 14px;
+      border-block-end: 1px solid var(--rule);
+    }
+    .release:first-child {
+      padding-block-start: 0;
+    }
+    .release:last-of-type {
+      border-block-end: none;
+      padding-block-end: 0;
+    }
+    .release h3 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .release h3 time {
+      font-weight: 400;
+      color: var(--dim);
+    }
+    .release ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .release li {
+      color: var(--dim);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .release li strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+    .release li code {
+      color: var(--pick);
+    }
+    .changes-note {
+      margin: 16px 0 0;
+      color: var(--dim);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
     /* ---- setup: the two copyable steps, nothing to leave the page for ---- */
     .setup {
       border-block-start: 1px solid var(--rule);
@@ -1165,6 +1248,10 @@
         grid-template-columns: minmax(0, 1fr);
         gap: 12px;
       }
+      .changes .wrap {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+      }
       .setup-note {
         grid-column: auto;
       }
@@ -1186,7 +1273,24 @@
       .bc-line { font-size: 8px; }
       .pl { font-size: 8px; }
       .status > span { font-size: 8px; }
-      .top .wrap { min-block-size: 46px; }
+      .top .wrap {
+        min-block-size: 46px;
+        gap: 12px;
+      }
+      /* compact bar so brand + nav stay on one line at 390px; the star
+         link keeps its aria-label, only the word hides */
+      .brand {
+        font-size: 14px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .top nav {
+        gap: 10px;
+        font-size: 12px;
+      }
+      .top nav a { white-space: nowrap; }
+      .star-word { display: none; }
+      .theme-toggle { padding: 5px 8px; }
     }
     @media (forced-colors: active) {
       .pane,
@@ -1232,6 +1336,7 @@
       </a>
       <nav aria-label="Page">
         <a href="#setup">setup</a>
+        <a href="#changelog">changelog</a>
         <a
           href="https://github.com/abiramcodes/ng-point#readme"
           target="_blank"
@@ -1244,7 +1349,7 @@
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Star ng-point on GitHub (opens in a new tab)"
-          >★ star</a
+          >★<span class="star-word"> star</span></a
         >
         <button type="button" class="theme-toggle" aria-label="Switch color scheme">
           <span class="t-light">light</span><span class="t-dark">dark</span>
@@ -1490,6 +1595,61 @@ export const appConfig: ApplicationConfig = {
           </dd>
         </div>
       </dl>
+    </div>
+  </section>
+
+  <!-- latest releases, mirrored from CHANGELOG.md — update both on release -->
+  <section class="changes" id="changelog" aria-labelledby="changes-h">
+    <div class="wrap">
+      <h2 id="changes-h">changelog</h2>
+      <div>
+        <article class="release">
+          <h3>1.1.0 · <time datetime="2026-11-24">2026-11-24</time></h3>
+          <ul>
+            <li>
+              <strong>added</strong> — <code>copied</code> toast: after Enter copies and the panel
+              closes, a brief confirmation stays on screen for ~2 seconds, so a successful copy no
+              longer looks like pressing Esc.
+            </li>
+            <li>
+              <strong>fixed</strong> — production builds shipped an overlay chunk that was never
+              loaded (~28 kB, visible in Native Federation builds). The dev-mode guard now folds it
+              away entirely; nothing is emitted.
+            </li>
+            <li>
+              <strong>changed</strong> — docs: the template line now enables in your existing
+              <code>tsconfig.base.json</code> / <code>tsconfig.app.json</code>, and the Angular
+              21.x / 22.0–22.1.3 / 22.1.4+ table is in the README and the agent skill.
+            </li>
+          </ul>
+        </article>
+        <article class="release">
+          <h3>1.0.0 · <time datetime="2026-11-22">2026-11-22</time></h3>
+          <ul>
+            <li>
+              <strong>first release</strong> — Alt+Click captures the component, file:line,
+              template, cleaned HTML, directives and parent to the clipboard, with secret redaction
+              and <code>ngPointIgnore</code>. Angular 21 and 22, dev-mode only.
+            </li>
+          </ul>
+        </article>
+        <p class="changes-note">
+          Full changelog on
+          <a
+            href="https://github.com/abiramcodes/ng-point/blob/main/CHANGELOG.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            >GitHub</a
+          >
+          · package on
+          <a
+            href="https://www.npmjs.com/package/@abiramcodes/ng-point"
+            target="_blank"
+            rel="noopener noreferrer"
+            >npm</a
+          >.
+        </p>
+      </div>
     </div>
   </section>
 

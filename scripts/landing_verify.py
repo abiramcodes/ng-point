@@ -158,16 +158,16 @@ with sync_playwright() as p:
     mb.screenshot(path=str(OUT / "landing-full-390-dark.png"), full_page=True)
     mb.close()
 
-    # 6. Copy button interaction.
+    # 6. Copy button interaction (first copyable; several exist).
     cp = new_page(browser)
     cp.goto(URL, wait_until="networkidle")
-    cp.locator(".copy-button").click()
+    cp.locator(".copy-button").first.click()
     cp.wait_for_timeout(400)
     state = cp.evaluate(
         "() => { const b = document.querySelector('.copy-button');"
         " return b.hasAttribute('data-copied') || b.hasAttribute('data-failed'); }"
     )
-    tip = cp.locator(".tip").text_content()
+    tip = cp.locator(".copyable").first.locator(".tip").text_content()
     print(f"copy feedback: visible={state}, tip={tip!r}")
     cp.close()
 

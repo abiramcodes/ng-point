@@ -306,6 +306,107 @@ describe('NgPointOverlayComponent', () => {
     expect(queue.entries().length).toBe(0);
   });
 
+  describe('copy toast (post-close confirmation)', () => {
+    function toastOf(el: HTMLElement): HTMLElement {
+      return el.querySelector<HTMLElement>('.ng-point-toast')!;
+    }
+
+    it('shows the copied count outside the dialog after Enter closes the panel', async () => {
+      const el = await createFixture();
+      const button = document.createElement('button');
+      session.openWith(context('A'), button, 1, 1);
+      session.addSelection(context('B'), button);
+      await TestBed.flushEffects();
+
+      const input = el.querySelector<HTMLInputElement>('.ng-point-instr')!;
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+      );
+
+      await vi.waitFor(() => expect(session.open()).toBe(false));
+      const toast = toastOf(el);
+      await vi.waitFor(() => expect(toast.textContent).toContain('copied — 2 contexts queued'));
+      expect(toast.classList.contains('ng-point-toast-show')).toBe(true);
+      // Must outlive the panel: rendered as the dialog's sibling, not inside it.
+      expect(toast.closest('dialog')).toBeNull();
+      expect(el.querySelector('dialog.ng-point-panel')!.hasAttribute('open')).toBe(false);
+    });
+
+    it('auto-hides after 2s', async () => {
+      const el = await createFixture();
+      session.openWith(context('A'), document.createElement('button'), 1, 1);
+      await TestBed.flushEffects();
+      vi.useFakeTimers();
+      try {
+        const input = el.querySelector<HTMLInputElement>('.ng-point-instr')!;
+        input.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+        );
+        await vi.advanceTimersByTimeAsync(0);
+        await TestBed.flushEffects();
+        await Promise.resolve();
+        const toast = toastOf(el);
+        expect(toast.textContent).toContain('copied — 1 context queued');
+        expect(toast.classList.contains('ng-point-toast-show')).toBe(true);
+
+        await vi.advanceTimersByTimeAsync(1999);
+        await TestBed.flushEffects();
+        await Promise.resolve();
+        expect(toast.classList.contains('ng-point-toast-show')).toBe(true);
+
+        await vi.advanceTimersByTimeAsync(1);
+        await TestBed.flushEffects();
+        await Promise.resolve();
+        expect(toast.classList.contains('ng-point-toast-show')).toBe(false);
+        expect(toast.textContent).not.toContain('copied');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('discarding via the close button shows no toast', async () => {
+      const el = await createFixture();
+      session.openWith(context('A'), document.createElement('button'), 1, 1);
+      await TestBed.flushEffects();
+
+      el.querySelector<HTMLButtonElement>(
+        'button[aria-label="Close ng-point panel (Escape)"]',
+      )!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await TestBed.flushEffects();
+      await Promise.resolve();
+
+      expect(session.open()).toBe(false);
+      const toast = toastOf(el);
+      expect(toast.classList.contains('ng-point-toast-show')).toBe(false);
+      expect(toast.textContent).not.toContain('copied');
+    });
+
+    it('shows no toast when the clipboard copy fails', async () => {
+      vi.stubGlobal('navigator', {
+        ...globalThis.navigator,
+        clipboard: {
+          writeText: vi.fn(async () => {
+            throw new Error('denied');
+          }),
+        },
+      });
+      const el = await createFixture();
+      session.openWith(context('A'), document.createElement('button'), 1, 1);
+      await TestBed.flushEffects();
+
+      const input = el.querySelector<HTMLInputElement>('.ng-point-instr')!;
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+      await vi.waitFor(() =>
+        expect(el.querySelector('.ng-point-status')!.textContent).toContain('Copy failed'),
+      );
+      expect(session.open()).toBe(true);
+      const toast = toastOf(el);
+      expect(toast.classList.contains('ng-point-toast-show')).toBe(false);
+      expect(toast.textContent).not.toContain('copied');
+    });
+  });
+
   it('suppression notices surface in the panel status region', async () => {
     const el = await createFixture();
     session.openWith(context('A'), document.createElement('button'), 1, 1);

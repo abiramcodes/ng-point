@@ -24,6 +24,8 @@ const PANEL_WIDTH = 440;
 const CARD_MIN_WIDTH = 260;
 // Fallback only until the first real measure (below); jsdom reports 0.
 const PANEL_HEIGHT_FALLBACK = 520;
+/** How long the post-copy toast stays visible after the panel closes. */
+const TOAST_MS = 2000;
 
 function clamp(value: number, low: number, high: number): number {
   return Math.min(Math.max(value, low), Math.max(low, high));
@@ -232,9 +234,13 @@ function clamp(value: number, low: number, high: number): number {
         <p class="ng-point-status" role="status">{{ statusLine() }}</p>
       </footer>
     </dialog>
+    <p class="ng-point-toast" [class.ng-point-toast-show]="toastText() !== ''" role="status">
+      <span class="ng-point-mark" aria-hidden="true">❮</span>{{ toastText() }}
+    </p>
   `,
   styles: `
-    .ng-point-panel {
+    .ng-point-panel,
+    .ng-point-toast {
       --ng-point-bg: #14141b;
       --ng-point-surface: #1d1d27;
       --ng-point-inset: #0e0e15;
@@ -244,7 +250,9 @@ function clamp(value: number, low: number, high: number): number {
       --ng-point-accent: #d40f62;
       --ng-point-danger: #ff8080;
       --ng-point-warn: #ffb84d;
+    }
 
+    .ng-point-panel {
       position: fixed;
       inset: auto;
       z-index: 2147483646;
@@ -269,7 +277,8 @@ function clamp(value: number, low: number, high: number): number {
     }
 
     @media (prefers-color-scheme: light) {
-      .ng-point-panel {
+      .ng-point-panel,
+      .ng-point-toast {
         --ng-point-bg: #ffffff;
         --ng-point-surface: #f2f2f6;
         --ng-point-inset: #e9e9ef;
@@ -575,9 +584,41 @@ function clamp(value: number, low: number, high: number): number {
       color: var(--ng-point-danger);
     }
 
+    /* Post-close copy confirmation: rendered OUTSIDE the <dialog> so it stays
+       visible after Enter closes the panel. Never interactive. */
+    .ng-point-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      z-index: 2147483646;
+      margin: 0;
+      padding: 7px 12px;
+      border: 1px solid var(--ng-point-border);
+      background: var(--ng-point-surface);
+      color: var(--ng-point-text);
+      font: 12px/1.4 ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+      white-space: nowrap;
+      box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transform: translate(-50%, 6px);
+      transition:
+        opacity 0.15s ease,
+        transform 0.15s ease,
+        visibility 0.15s;
+    }
+
+    .ng-point-toast-show {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, 0);
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .ng-point-panel,
-      .ng-point-panel * {
+      .ng-point-panel *,
+      .ng-point-toast {
         transition: none !important;
         animation: none !important;
       }
@@ -594,6 +635,10 @@ export class NgPointOverlayComponent implements OnDestroy {
   private readonly statusText = signal('');
   /** The panel's status line: component feedback first, then pick-suppression notices. */
   protected readonly statusLine = computed(() => this.statusText() || this.session.notice());
+  /** Post-close copy confirmation (rendered outside the dialog; '' hides it). */
+  protected readonly toastText = signal('');
+  private toastTimer: ReturnType<typeof setTimeout> | undefined;
+  private lastToast = '';
   /** Real rendered height, measured after each render; fallback until then. */
   private readonly panelHeight = signal(PANEL_HEIGHT_FALLBACK);
   private readonly viewportW = signal(globalThis.innerWidth ?? 1024);
@@ -670,6 +715,7 @@ export class NgPointOverlayComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     globalThis.removeEventListener('resize', this.resizeListener);
+    clearTimeout(this.toastTimer);
   }
 
   /**
@@ -806,7 +852,9 @@ export class NgPointOverlayComponent implements OnDestroy {
       return;
     }
     this.session.queue.addMany(entries);
-    this.setStatus(`Copied ${entries.length} context(s) and queued them.`);
+    this.showToast(
+      `copied — ${entries.length} context${entries.length === 1 ? '' : 's'} queued`,
+    );
     this.session.close();
   }
 
@@ -861,5 +909,21 @@ export class NgPointOverlayComponent implements OnDestroy {
     }
     this.lastStatus = text;
     this.statusText.set(text);
+  }
+
+  /**
+   * Shows the post-close toast (same repeat-message re-announce trick as
+   * setStatus) and restarts its single auto-hide timer — rapid repeat
+   * commits update the text in place instead of stacking toasts.
+   */
+  private showToast(message: string): void {
+    let text = message;
+    if (text === this.lastToast) {
+      text += ' ';
+    }
+    this.lastToast = text;
+    this.toastText.set(text);
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => this.toastText.set(''), TOAST_MS);
   }
 }
