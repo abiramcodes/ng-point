@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * check-prod-clean.mjs — verifies that ng-point does not leak into the
- * production build's INITIAL bundles.
+ * production build AT ALL.
  *
  * Expected production behavior:
- * - No ng-point runtime markers in any chunk referenced from index.html.
- * - The overlay is allowed to exist in a lazy chunk (emitted but never
- *   loaded, because the `ngDevMode` guard short-circuits the dynamic import).
+ * - No ng-point runtime markers in ANY emitted JS file (initial or lazy).
+ *   The positive `ngDevMode` guard in `provide-ng-point.ts` makes esbuild
+ *   drop the overlay import entirely, so no overlay chunk is emitted —
+ *   an orphaned (never-loaded) chunk is a failure, not a footnote.
  * - No `data-ng-source-location` emission (that tsconfig option is scoped to
  *   the development configuration).
  */
@@ -30,38 +31,25 @@ if (initialScripts.length === 0) {
   process.exit(1);
 }
 
-let failed = false;
-for (const script of initialScripts) {
-  const contents = readFileSync(join(DIST, script), 'utf8');
-  const hits = MARKERS.filter((marker) => contents.includes(marker));
-  if (hits.length > 0) {
-    failed = true;
-    console.error(`✗ ${script} contains ng-point markers: ${hits.join(', ')}`);
-  } else {
-    console.log(`✓ ${script} clean`);
-  }
-}
-
-// Informational: the overlay lazy chunk may exist (never loaded in prod).
 const allJs = readdirSync(DIST).filter((f) => f.endsWith('.js'));
 const initial = new Set(initialScripts);
-const lazyWithMarkers = allJs.filter((file) => {
-  if (initial.has(file)) {
-    return false;
+
+let failed = false;
+for (const file of allJs) {
+  const contents = readFileSync(join(DIST, file), 'utf8');
+  const hits = MARKERS.filter((marker) => contents.includes(marker));
+  const kind = initial.has(file) ? 'initial' : 'lazy';
+  if (hits.length > 0) {
+    failed = true;
+    console.error(`✗ ${file} (${kind}) contains ng-point markers: ${hits.join(', ')}`);
+  } else {
+    console.log(`✓ ${file} (${kind}) clean`);
   }
-  try {
-    return readFileSync(join(DIST, file), 'utf8').includes('ng-point-panel');
-  } catch {
-    return false;
-  }
-});
-for (const file of lazyWithMarkers) {
-  console.log(`ℹ ${file} contains the (never-loaded) ng-point lazy chunk — expected dev-gated output`);
 }
 
 if (failed) {
-  console.error('\n✗ ng-point runtime code leaked into initial production bundles');
+  console.error('\n✗ ng-point runtime code leaked into the production build');
   process.exit(1);
 }
 
-console.log('\n✓ production build is clean of ng-point runtime code in initial bundles');
+console.log('\n✓ production build is clean of ng-point runtime code in every emitted bundle');

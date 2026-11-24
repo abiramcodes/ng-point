@@ -61,9 +61,9 @@ On 22.1.4+, Angular can stamp every element with its template source location. C
 
 > ⚠️ Do not put this option in your shared/production tsconfig — its emission is **not** stripped from production builds.
 
-### Optional: fully excluding the overlay chunk from production
+### Optional: fully excluding ng-point from production
 
-`provideNgPoint()` already never *loads* the overlay in production, but the lazy chunk is emitted. To exclude it from the bundle entirely, register the provider only in dev:
+You don't need this for the overlay: in production the `ngDevMode` guard constant-folds away, so the overlay chunk is not emitted at all. Only the tiny `provideNgPoint()` stub remains in your initial bundle. To drop even that, register the provider only in dev:
 
 ```ts
 // main.ts
@@ -73,6 +73,8 @@ bootstrapApplication(App, {
   providers: [provideRouter(routes), ...(isDevMode() ? [provideNgPoint()] : [])],
 });
 ```
+
+Note for module-federation setups that externalize `@angular/core`: `isDevMode()` stays a runtime call there and cannot fold the reference away — use a production file replacement that omits the ng-point import instead.
 
 ## Setup variations by Angular version
 
@@ -94,7 +96,7 @@ Install and `provideNgPoint()` are identical on every supported version. The onl
 | `Alt+↑` / `Alt+↓` (macOS: `Option+↑/↓`) | Re-target the active selection to the parent / first-child element |
 | Click a card | Make it the active selection (arrows / re-pick act on it) |
 | Card `✕` | Remove that selection |
-| `Enter` | Copy **all** blocks (joined by `---`), queue each as its own entry, close |
+| `Enter` | Copy **all** blocks (joined by `---`), queue each as its own entry, close — a brief `copied` toast confirms |
 | `Ctrl+Enter` (macOS: `⌘+Enter`) or per-card `copy` | Copy one block without queueing |
 | `Shift+Enter` | Newline in the instruction (collapsed in the output) |
 | `Escape` | Close without queueing |
@@ -216,6 +218,10 @@ pnpm test:lib      # single-run vitest with coverage
 ```
 
 The workspace develops on Angular 22; Angular 21 support is verified by the `angular21` CI job (`.github/workflows/ci.yml`), which swaps the workspace to the Angular 21 toolchain via `scripts/ci-angular21.mjs` and runs the full build/test suite. Release builds of the package should be produced with the Angular 21 toolchain (the oldest supported major), so the published APF output is consumable by both 21 and 22 apps.
+
+## Changelog
+
+See the root [`CHANGELOG.md`](https://github.com/abiramcodes/ng-point/blob/main/CHANGELOG.md).
 
 ## License
 

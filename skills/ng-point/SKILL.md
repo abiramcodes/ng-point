@@ -60,7 +60,7 @@ Lines are omitted when empty or unavailable — no invented data.
 | `Alt+Click` (macOS: `Option+Click`) | Pick (or re-pick the active selection while the panel is open) |
 | `Alt+Shift+Click` (macOS: `Option+Shift+Click`) | Add another element (up to 5 per session) |
 | `Alt+↑` / `Alt+↓` (macOS: `Option+↑/↓`) | Retarget to parent / first-child |
-| `Enter` | Copy all blocks (joined by `---`), queue, close |
+| `Enter` | Copy all blocks (joined by `---`), queue, close (a `copied` toast confirms) |
 | `Ctrl+Enter` (macOS: `⌘+Enter`) | Copy one block without queueing |
 | `Esc` | Close without queueing |
 
@@ -112,7 +112,7 @@ localStorage.ngPointDisabled = '1';  // disables picking without a rebuild
 ## How it works (no build plugin)
 
 - `provideNgPoint()` registers a `provideEnvironmentInitializer()` that checks
-  `ngDevMode` — constant-folded `false` in production, so the overlay chunk is dead code.
+  `ngDevMode` — constant-folded `false` in production, so the overlay chunk is never emitted.
 - The overlay attaches a non-modal `<dialog>` to `<body>` and a capture-phase
   `click` listener on `document`.
 - On Alt+Click it reads `window.ng` (Angular's dev-mode devtools API) to resolve

@@ -32,7 +32,7 @@ and must be green before merge. Locally, match it:
 pnpm test:lib                    # library specs (vitest)
 pnpm test                        # demo app specs
 pnpm build:lib && pnpm build     # library + app builds
-node scripts/check-prod-clean.mjs   # ng-point must NEVER appear in initial prod chunks
+node scripts/check-prod-clean.mjs   # ng-point must NEVER appear in any prod chunk
 ```
 
 The prod-clean check is the package's core promise: ng-point is dev-mode-only,

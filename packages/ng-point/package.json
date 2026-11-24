@@ -1,6 +1,6 @@
 {
   "name": "@abiramcodes/ng-point",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Dev-mode-only Angular package: Alt+Click any element to capture an LLM-ready context block (component, file:line, template, directives, parent) — copied to the clipboard and queued for AI coding agents.",
   "license": "MIT",
   "author": "Abiram (https://github.com/abiramcodes)",

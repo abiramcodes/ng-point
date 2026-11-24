@@ -60,6 +60,7 @@ Claude Code reads `.claude/skills/ng-point/` instead — same command, that fold
 
 - [Landing page](https://abiramcodes.github.io/ng-point/): what it does in 30 seconds, with a live setup section.
 - [README](https://github.com/abiramcodes/ng-point#readme): full usage, keyboard shortcuts, configuration, security and redaction notes.
+- [Changelog](https://github.com/abiramcodes/ng-point/blob/main/CHANGELOG.md): what changed in each release (latest: 1.1.0).
 - [SKILL.md](https://raw.githubusercontent.com/abiramcodes/ng-point/main/skills/ng-point/SKILL.md): agent skill file — everything an AI coding agent needs to install, configure and drive ng-point.
 - [npm package](https://www.npmjs.com/package/@abiramcodes/ng-point): installable package page.
 - [Contributing](https://github.com/abiramcodes/ng-point/blob/main/CONTRIBUTING.md): dev setup, verification bar, design language.

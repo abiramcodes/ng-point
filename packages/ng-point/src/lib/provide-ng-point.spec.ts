@@ -10,6 +10,17 @@ afterEach(() => {
 });
 
 describe('provideNgPoint dev-mode gate', () => {
+  it('does nothing in production builds (ngDevMode === false, as builders substitute it)', async () => {
+    vi.stubGlobal('ngDevMode', false);
+    TestBed.configureTestingModule({ providers: [provideNgPoint()] });
+    TestBed.inject(Injector); // forces injector creation → the initializer ran
+
+    await new Promise((resolve) => setTimeout(resolve, 25));
+
+    expect((globalThis as Record<string, unknown>)['__ngPointActive']).toBeUndefined();
+    expect(document.querySelector('.ng-point-panel')).toBeNull();
+  });
+
   it('does nothing in production builds (ngDevMode absent)', async () => {
     vi.stubGlobal('ngDevMode', undefined);
     TestBed.configureTestingModule({ providers: [provideNgPoint()] });
